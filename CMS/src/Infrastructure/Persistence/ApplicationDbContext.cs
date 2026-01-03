@@ -2,34 +2,26 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace MyCMS.Infrastructure.Persistence
+namespace CMS.Infrastructure.Persistence
 {
-    public class ApplicationDbContext : IdentityDbContext<User>
+    public class ApplicationDbContext : DbContext 
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
+            : base(options) { }
+
+        public DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            // Configuramos los nombres exactos para evitar el error 42P01
+            modelBuilder.Entity<User>().ToTable("user");
+
+            // Si deseas mapear la tabla access_role de tu imagen:
+            modelBuilder.Entity<User>()
+                .Property(u => u.RolId)
+                .HasColumnName("rol_id");
         }
-
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            // Es vital mantener esta línea para que Identity configure sus tablas internas
-            base.OnModelCreating(builder);
-
-            // Ejemplo: Personalizar nombres de tablas (opcional)
-            // Por defecto son AspNetUsers, AspNetRoles, etc.
-            builder.Entity<User>(entity => { entity.ToTable(name: "Users"); });
-
-            // Aquí puedes configurar relaciones adicionales para tu CMS
-            // Ejemplo: Un usuario tiene muchas actividades
-            // builder.Entity<Activity>()
-            //    .HasOne(a => a.User)
-            //    .WithMany(u => u.Activities)
-            //    .HasForeignKey(a => a.UserId);
-        }
-
-        // Tus tablas del CMS irán apareciendo aquí
-        // public DbSet<Page> Pages { get; set; }
-        // public DbSet<ActivityLog> ActivityLogs { get; set; }
     }
 }

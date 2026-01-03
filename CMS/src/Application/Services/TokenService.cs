@@ -5,7 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace MyCMS.Infrastructure.Services
+namespace CMS.Infrastructure.Services
 {
     public class TokenService : ITokenService
     {
@@ -24,7 +24,7 @@ namespace MyCMS.Infrastructure.Services
             // 1. Definimos los Claims básicos
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.NameId, user.Id),
+                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim("firstName", user.FirstName),
                 new Claim("lastName", user.LastName)

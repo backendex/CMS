@@ -2,7 +2,7 @@
 using CMS.src.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MyCMS.API.Controllers
+namespace CMS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")] // Esto define la URL: api/auth
@@ -13,7 +13,7 @@ namespace MyCMS.API.Controllers
         public AuthController(IAuthService authService)
         {
             _authService = authService;
-        }
+        }   
 
         [HttpPost("register")] // URL: api/auth/register
         public async Task<IActionResult> Register(UserRegisterDto registerDto)

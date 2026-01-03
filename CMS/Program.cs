@@ -1,53 +1,41 @@
+using CMS.Application.Services;
+using CMS.Infrastructure.Services;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MyCMS.Application.Services;
-using MyCMS.Infrastructure.Persistence;
-using MyCMS.Infrastructure.Services;
+using CMS.Infrastructure.Persistence;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------------------------------------------------
-// 1. SERVICIOS DE INFRAESTRUCTURA (Base de Datos)
-// ---------------------------------------------------------
+// 1. BASE DE DATOS (PostgreSQL)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Aquí también configurarías la autenticación usando builder.Configuration["TokenKey"]
+// ---------------------------------------------------------
+// 2. ELIMINADO: builder.Services.AddIdentityCore...
+// No lo usamos porque tu clase 'Users' no hereda de IdentityUser.
+// ---------------------------------------------------------
 
-// ---------------------------------------------------------
-// 2. CONFIGURACIÓN DE IDENTITY (Seguridad de Usuarios/Roles)
-// ---------------------------------------------------------
-builder.Services.AddIdentityCore<User>(opt => {
-    opt.Password.RequireNonAlphanumeric = false;
-    opt.Password.RequiredLength = 8;
-})
-.AddRoles<IdentityRole>() // IMPORTANTE: Para manejar roles
-.AddEntityFrameworkStores<ApplicationDbContext>();
-
-// ---------------------------------------------------------
-// 3. INYECCIÓN DE DEPENDENCIAS (Conectando Capas)
-// ---------------------------------------------------------
-// Unimos las Interfaces de 'Application' con las clases de 'Infrastructure'
+// 3. INYECCIÓN DE DEPENDENCIAS
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// ---------------------------------------------------------
 // 4. CONFIGURACIÓN DE AUTENTICACIÓN JWT
-// ---------------------------------------------------------
+// Validamos que el TokenKey exista para evitar errores de referencia nula
+var tokenKey = builder.Configuration["TokenKey"]
+    ?? throw new Exception("TokenKey no encontrado en appsettings.json");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["TokenKey"])),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
             ValidateIssuer = false,
             ValidateAudience = false
         };
@@ -60,21 +48,23 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Agrega esto para que Swagger funcione en el navegador
+// Configuración de Middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "CMS API V1");
-        c.RoutePrefix = "swagger"; // Esto hace que entres por localhost:XXXX/swagger
+        c.RoutePrefix = "swagger";
     });
 }
 
 app.UseHttpsRedirection();
+
+// El orden es vital: Authentication antes que Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers(); // ¡Vital para que no dé 404!
+app.MapControllers();
 
 app.Run();
