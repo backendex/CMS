@@ -1,30 +1,27 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.AccessControl;
 
 namespace CMS.src.Domain.Entities
 {
-    [Table("users")] // Fuerza el nombre de la tabla a minúsculas como en tu DB
+    // Entities/User.cs
     public class User
     {
-        [Key]
-        [Column("id")] // Mapea a la columna 'id' de tu imagen
+        //Estructura tal cual se define en la base de datos
+        [Column("id")]
         public int Id { get; set; }
-
         [Column("email")]
         public string Email { get; set; } = string.Empty;
-
         [Column("password")]
         public string Password { get; set; } = string.Empty;
-
-        [Column("rol_id")] // Mapea a 'rol_id' de tu imagen
+        [Column("roi_id")]
         public int RolId { get; set; }
+        public AccessRole Role { get; set; } = null!;
 
-        // Si quieres mantener estas propiedades en C# pero no están en la DB, 
-        // debes marcarlas como [NotMapped] o agregarlas a la tabla en Postgres.
-        [NotMapped]
-        public string FirstName { get; set; } = string.Empty;
-        [NotMapped]
-        public string LastName { get; set; } = string.Empty;
+        // Nuevos campos necesarios para la validación
+        [Column("is_active")]
+        public bool IsActive { get; set; } = false;
+        public string? ValidationToken { get; set; }
     }
 }

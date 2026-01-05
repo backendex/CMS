@@ -1,13 +1,13 @@
-﻿using CMS.src.Application.DTOs;
+﻿using CMS.src.Application.DTOs.Auth;
+using Microsoft.AspNetCore.Identity.Data;
 
 namespace CMS.src.Application.Interfaces
 {
     public interface IAuthService
     {
-        // Método para registrar nuevos usuarios con un rol específico
-        Task<AuthResponseDto> RegisterAsync(UserRegisterDto registerDto);
+        Task<AuthResponse> RegisterAsync(RegisterDto registerDto);
+        Task<AuthResponse> LoginAsync(LoginDto loginDto);
+        Task<AuthResponse> ActivateAccountAsync(string token);
 
-        // Método para validar credenciales y devolver el token con permisos
-        Task<AuthResponseDto> LoginAsync(LoginRequest loginDto);
     }
 }

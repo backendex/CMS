@@ -1,5 +1,7 @@
 ﻿using CMS.src.Application.DTOs;
+using CMS.src.Application.DTOs.Auth;
 using CMS.src.Application.Interfaces;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CMS.API.Controllers
@@ -15,20 +17,35 @@ namespace CMS.API.Controllers
             _authService = authService;
         }   
 
-        [HttpPost("register")] // URL: api/auth/register
-        public async Task<IActionResult> Register(UserRegisterDto registerDto)
+        [HttpPost("register")] 
+        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
-            var result = await _authService.RegisterAsync(registerDto);
-            if (!result.IsSuccess) return BadRequest(result.Message);
+            var response = await _authService.RegisterAsync(registerDto);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            var result = await _authService.LoginAsync(loginDto);
+            if (!result.Success) return Unauthorized(result);
+
             return Ok(result);
         }
 
-        [HttpPost("login")] // URL: api/auth/login
-        public async Task<IActionResult> Login(LoginRequest loginDto)
+        [HttpGet("activate")]
+        public async Task<IActionResult> Activate([FromQuery] string token)
         {
-            var result = await _authService.LoginAsync(loginDto);
-            if (!result.IsSuccess) return Unauthorized(result.Message);
+            var result = await _authService.ActivateAccountAsync(token);
+            if (!result.Success) return BadRequest(result);
+
             return Ok(result);
         }
+
+        
     }
 }

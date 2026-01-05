@@ -1,45 +1,54 @@
-using CMS.Application.Services;
-using CMS.Infrastructure.Services;
+using CMS.Infrastructure.Persistence;
 using CMS.src.Application.Interfaces;
-using CMS.src.Domain.Entities;
+using CMS.src.Application.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using CMS.Infrastructure.Persistence;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. BASE DE DATOS (PostgreSQL)
+// Configurar la base de datos de Postgres
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// ---------------------------------------------------------
-// 2. ELIMINADO: builder.Services.AddIdentityCore...
-// No lo usamos porque tu clase 'Users' no hereda de IdentityUser.
-// ---------------------------------------------------------
+builder.Services.AddScoped<IApplicationDbContext>(provider =>
+    provider.GetRequiredService<ApplicationDbContext>());
 
-// 3. INYECCIÓN DE DEPENDENCIAS
-builder.Services.AddScoped<ITokenService, TokenService>();
+// 2. Registro del Servicio de Correo (Infraestructura)
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+
+// 2. REGISTRO DE SERVICIOS DE APLICACIÓN
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// 4. CONFIGURACIÓN DE AUTENTICACIÓN JWT
-// Validamos que el TokenKey exista para evitar errores de referencia nula
-var tokenKey = builder.Configuration["TokenKey"]
-    ?? throw new Exception("TokenKey no encontrado en appsettings.json");
+// 3. CONFIGURACIÓN DE AUTENTICACIÓN JWT
+var jwtKey = builder.Configuration["JwtSettings:Key"];
+var keyBytes = Encoding.ASCII.GetBytes(jwtKey!);
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(config =>
+{
+    config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(config =>
+{
+    config.RequireHttpsMetadata = false;
+    config.SaveToken = true;
+    config.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
-            ValidateIssuer = false,
-            ValidateAudience = false
-        };
-    });
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
 
 // 5. CONTROLADORES Y SWAGGER
 builder.Services.AddControllers();
@@ -61,7 +70,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// El orden es vital: Authentication antes que Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
