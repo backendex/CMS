@@ -1,0 +1,16 @@
+# services:
+#   db:
+#     image: postgres:16
+#     container_name: cms_db
+#     restart: always
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: Kath2026
+#       POSTGRES_DB: cms_test
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - cms_db_data:/var/lib/postgresql/data
+
+# volumes:
+#   cms_db_data:

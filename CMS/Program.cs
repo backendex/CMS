@@ -8,23 +8,22 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar la base de datos de Postgres
+// --- 1. BASE DE DATOS ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
     provider.GetRequiredService<ApplicationDbContext>());
 
-// 2. Registro del Servicio de Correo (Infraestructura)
+builder.Services.AddSwaggerGen(options => {
+    options.CustomSchemaIds(type => type.FullName);
+});
+// --- 2. SERVICIOS ---
 builder.Services.AddScoped<IEmailService, EmailService>();
-
-
-// 2. REGISTRO DE SERVICIOS DE APLICACIÓN
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// 3. CONFIGURACIÓN DE AUTENTICACIÓN JWT
+// --- 3. AUTENTICACIÓN JWT ---
 var jwtKey = builder.Configuration["JwtSettings:Key"];
 var keyBytes = Encoding.ASCII.GetBytes(jwtKey!);
 
@@ -49,26 +48,31 @@ builder.Services.AddAuthentication(config =>
     };
 });
 
+// --- 4. CORS ---
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowReact", policy => {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
-// 5. CONTROLADORES Y SWAGGER
+// --- 5. CONTROLADORES Y SWAGGER CONFIGURADO ---
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 
-// Configuración de Middlewares
+// --- MIDDLEWARES ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "CMS API V1");
-        c.RoutePrefix = "swagger";
-    });
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowReact"); 
 
 app.UseAuthentication();
 app.UseAuthorization();
