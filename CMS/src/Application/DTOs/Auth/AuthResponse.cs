@@ -4,7 +4,7 @@
     {
         public bool Success { get; set; }
         public string Message { get; set; }
-        public string? Token { get; set; } // Aquí se guarda la cadena JWT
+        public string? Token { get; set; } 
         public string? Email { get; set; }
 
         // Constructor para respuestas exitosas

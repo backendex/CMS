@@ -1,6 +1,6 @@
 ﻿namespace CMS.src.Application.Interfaces
 {
-    public interface IRoleManager
+    public interface IUserService
     {
 
     }

@@ -2,6 +2,7 @@
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,39 +16,34 @@ namespace CMS.src.Application.Services
         private readonly IApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
-        private readonly IRoleManager _roleManager;
-    
+        private readonly UserManager<User> _userManager;
 
-        public AuthService(IApplicationDbContext context, IConfiguration configuration, IEmailService emailService, IRoleManager roleManager)
+        public AuthService(UserManager<User> userManager,IApplicationDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
             _emailService = emailService;
-            _roleManager = roleManager;
+            _userManager = userManager;
         }
 
-        //Aqui se define la funcion para el registro
         public async Task<AuthResponse> RegisterAsync(RegisterDto registerDto)
         {
-            // 1. Usamos tu entidad 'User' del Domain, no ApplicationUser
             var userExists = await _context.Users.AnyAsync(u => u.Email == registerDto.Email);
             if (userExists) return new AuthResponse(false, "El correo ya existe.", null);
 
             var newUser = new User
             {
                 Email = registerDto.Email,
-                Password = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
                 RolId = registerDto.RolId,
 
                 // Configuración inicial
                 IsActive = false,
-                ValidationToken = Guid.NewGuid().ToString() // Genera un código único
+                ValidationToken = Guid.NewGuid().ToString() 
             };
 
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();          
 
-            // 4. Preparar y enviar el correo (Usando el IEmailService inyectado)
             string activationLink = $"https://localhost:44351/api/Auth/activate?token={newUser.ValidationToken}";
 
             string htmlBody = $@"
@@ -62,86 +58,105 @@ namespace CMS.src.Application.Services
             await _emailService.SendEmailAsync(newUser.Email, "Activa tu cuenta de CMS", htmlBody);
 
             return new AuthResponse(true, "Usuario registrado. Revise su correo para activar su cuenta.", null);
-        }     
-
-        //Aqui se define la funcion para el login
-        public async Task<AuthResponse> LoginAsync(LoginDto loginDto)
-        {
-             var user = await _context.Users
-            .Include(u => u.Role) // IMPORTANTE: Sin esto, user.Role será null y el token dirá "Viewer"
-            .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
-
-            // 1. Validar credenciales
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password))
-            {
-                return new AuthResponse(false, "Correo o contraseña incorrectos.", null);
-            }
-
-            // 2. Validar si la cuenta está activa (EL CAMPO QUE AGREGAMOS)
-            if (!user.IsActive)
-            {
-                return new AuthResponse(false, "Tu cuenta aún no ha sido activada. Revisa tu correo.", null);
-            }
-
-            // 3. Generar el Token si todo está bien
-            var token = GenerateJwtToken(user);
-            return new AuthResponse(true, "Sesión iniciada correctamente", token);
         }
-        //Función para generar el token JWT
-        private string GenerateJwtToken(User user)
+        public async Task<IdentityResult> RegisterByAdminAsync(RegisterDto model)
         {
-                    var claims = new[] {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                // AGREGA ESTA LÍNEA:
-                new Claim(ClaimTypes.Role, user.Role.NameRol?? "Viewer")
+            var customRole = await _context.AccessRoles
+                .FirstOrDefaultAsync(r => r.Id == model.RolId);
+
+            if (customRole == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "El rol especificado no existe." });
+            }
+
+            var tempPassword = GenerateRandomPassword();
+
+            var user = new User
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.FullName,
+                RolId = customRole.Id,
+                EmailConfirmed = false
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+            var result = await _userManager.CreateAsync(user, tempPassword);
+
+            if (result.Succeeded)
+            {
+
+                await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, customRole.NameRol));
+
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+                var confirmationLink = $"https://tu-frontend.com/confirmar?userId={user.Id}&token={encodedToken}";
+
+                await _emailService.SendWelcomeEmail(user.Email, tempPassword, confirmationLink);
+
+                return result;
+            }
+            return result;
+        }
+        private string GenerateRandomPassword()
+        {
+            return Guid.NewGuid().ToString("N").Substring(0, 10) + "A1!";
+        }
+
+        public async Task<string> LoginAsync(LoginDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email)
+                ?? throw new UnauthorizedAccessException("Credenciales inválidas");
+
+            if (!user.EmailConfirmed)
+                throw new UnauthorizedAccessException("Cuenta no confirmada");
+
+            var passwordOk = await _userManager.CheckPasswordAsync(user, dto.Password);
+            if (!passwordOk)
+                throw new UnauthorizedAccessException("Credenciales inválidas");
+
+            return await GenerateJwtTokenAsync(user);
+        }
+
+        public async Task<User?> FindByEmailAsync(string email)
+         => await _userManager.FindByEmailAsync(email);
+
+        public async Task<bool> CheckPasswordAsync(User user, string password)
+            => await _userManager.CheckPasswordAsync(user, password);
+
+  
+        public async Task<string> GenerateJwtTokenAsync(User user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Email, user.Email!)
+            };
+
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]!)
+            );
+
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(3),
+                expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-        public async Task<List<UserListDto>> GetAllUsersAsync()
-        {
-            var users = await _context.Users.ToListAsync();
-            var userList = new List<UserListDto>();
 
-            foreach (var user in users)
-            {
-                // Obtenemos los roles de cada usuario
-                var roles = await _context.GetRolesAsync(user);
-
-                userList.Add(new UserListDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    EmailConfirmed = user.EmailConfirmed,
-                    Role = roles.FirstOrDefault() ?? "Sin Rol",
-                    CreatedAt = DateTime.Now // Si tienes una propiedad de fecha en tu modelo
-                });
-            }
-
-            return userList;
-        }
-        public async Task<List<string>> GetAvailableRolesAsync()
-        {
-            // Obtiene todos los nombres de los roles configurados en la DB
-            return await _roleManager.Roles.Select(r => r.Name).ToListAsync();
-        }
         public async Task<AuthResponse> ActivateAccountAsync(string token)
         {
-            // Buscamos al usuario que tenga ese token de validación
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.ValidationToken == token);
 
@@ -150,7 +165,6 @@ namespace CMS.src.Application.Services
                 return new AuthResponse(false, "El enlace de activación es inválido o ya fue utilizado.", null);
             }
 
-            // Activamos la cuenta y limpiamos el token
             user.IsActive = true;
             user.ValidationToken = null;
 
@@ -159,6 +173,9 @@ namespace CMS.src.Application.Services
             return new AuthResponse(true, "¡Cuenta activada con éxito! Ya puedes iniciar sesión.", null);
         }
 
-    
+        Task<AuthResponse> IAuthService.LoginAsync(LoginDto loginDto)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

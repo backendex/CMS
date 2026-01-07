@@ -17,7 +17,7 @@ namespace CMS.Infrastructure.Persistence
             base.OnModelCreating(modelBuilder);
             // Configuración de la relación entre User y AccessRole
             modelBuilder.Entity<User>(entity => {
-                entity.HasOne(d => d.Role)
+                entity.HasOne(d => d.AccessRole)
                       .WithMany(p => p.Users)
                       .HasForeignKey(d => d.RolId)
                       .HasConstraintName("fk_user_role"); 

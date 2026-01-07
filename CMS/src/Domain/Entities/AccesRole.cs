@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CMS.src.Domain.Entities
 {
-    public class AccessRole
+    public class AccessRole : IdentityRole<int>
     {
         [Column("id")]
         public int Id { get; set; }
