@@ -102,20 +102,24 @@ namespace CMS.src.Application.Services
             return Guid.NewGuid().ToString("N").Substring(0, 10) + "A1!";
         }
 
-        public async Task<string> LoginAsync(LoginDto dto)
+        public async Task<AuthResponse> LoginAsync(LoginDto dto)
         {
-            var user = await _userManager.FindByEmailAsync(dto.Email)
-                ?? throw new UnauthorizedAccessException("Credenciales inválidas");
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return new AuthResponse(false, "Credenciales inválidas", null);
 
             if (!user.EmailConfirmed)
-                throw new UnauthorizedAccessException("Cuenta no confirmada");
+                return new AuthResponse(false, "Cuenta no confirmada", null);
 
             var passwordOk = await _userManager.CheckPasswordAsync(user, dto.Password);
             if (!passwordOk)
-                throw new UnauthorizedAccessException("Credenciales inválidas");
+                return new AuthResponse(false, "Credenciales inválidas", null);
 
-            return await GenerateJwtTokenAsync(user);
+            var token = await GenerateJwtTokenAsync(user);
+
+            return new AuthResponse(true, "Login exitoso", token);
         }
+
 
         public async Task<User?> FindByEmailAsync(string email)
          => await _userManager.FindByEmailAsync(email);
@@ -171,11 +175,6 @@ namespace CMS.src.Application.Services
             await _context.SaveChangesAsync();
 
             return new AuthResponse(true, "¡Cuenta activada con éxito! Ya puedes iniciar sesión.", null);
-        }
-
-        Task<AuthResponse> IAuthService.LoginAsync(LoginDto loginDto)
-        {
-            throw new NotImplementedException();
         }
     }
 }

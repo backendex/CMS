@@ -36,7 +36,7 @@ namespace CMS.API.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -81,6 +81,14 @@ namespace CMS.API.Controllers
             return Ok(result);
         }
 
-        
+        //Para realizar pruebas de api
+
+        [HttpGet("ping")]
+        public IActionResult Ping()
+        {
+            return Ok(new { message = "API conectada correctamente 🚀" });
+        }
+
+
     }
 }

@@ -7,20 +7,28 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//BASE DE DATOS
+#region DATABASE
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
     provider.GetRequiredService<ApplicationDbContext>());
 
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
-//IDENTITY
+#endregion
+
+#region IDENTITY
+
 builder.Services.AddIdentity<User, AccessRole>(options =>
 {
     options.Password.RequireDigit = false;
@@ -32,7 +40,7 @@ builder.Services.AddIdentity<User, AccessRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Evita redirecciones HTML en una API
+// Evitar redirecciones HTML en APIs
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Events.OnRedirectToLogin = context =>
@@ -42,14 +50,21 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+#endregion
 
-//SERVICIOS DE APLICACIÓN
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
+#region JWT AUTHENTICATION (⚠️ SOLO UNA VEZ)
 
+var jwtSection = builder.Configuration.GetSection("JwtSettings");
 
-//JWT AUTHENTICATION (UNA SOLA VEZ)
-var jwtKey = builder.Configuration["JwtSettings:Key"]!;
+var jwtKey = jwtSection.GetValue<string>("Key");
+var issuer = jwtSection.GetValue<string>("Issuer");
+var audience = jwtSection.GetValue<string>("Audience");
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new Exception("❌ JwtSettings:Key no configurado en appsettings.json");
+}
+
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>
@@ -59,8 +74,9 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
@@ -68,38 +84,51 @@ builder.Services.AddAuthentication(options =>
 
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+        ValidIssuer = issuer,
+        ValidAudience = audience,
 
-        ClockSkew = TimeSpan.Zero
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero,
+
+        RoleClaimType = ClaimTypes.Role
     };
 });
 
+#endregion
 
-//AUTORIZACIÓN / POLICIES
+#region AUTHORIZATION / POLICIES
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
+    options.AddPolicy("RequireAdminRole", policy =>
+        policy.RequireRole("Admin"));
+
+    options.AddPolicy("RequireUserRole", policy =>
+        policy.RequireRole("User"));
 });
 
+#endregion
 
-//CORS
+#region CORS
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
+#endregion
 
-// 7CONTROLLERS + SWAGGER
+#region CONTROLLERS & SWAGGER
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -134,8 +163,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+#endregion
+
 var app = builder.Build();
 
+#region MIDDLEWARE PIPELINE
 
 if (app.Environment.IsDevelopment())
 {
@@ -147,9 +179,11 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowReact");
 
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+#endregion
 
 app.Run();
