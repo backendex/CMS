@@ -36,6 +36,9 @@ namespace CMS.Infrastructure.Persistence
                 entity.Property(e => e.CanDelete).HasColumnName("can_delete");
             });
 
+            modelBuilder.Entity<User>(entity => {
+                entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
+            });
 
         }
     }

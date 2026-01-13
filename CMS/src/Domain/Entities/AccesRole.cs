@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CMS.src.Domain.Entities
 {
-    public class AccessRole : IdentityRole<int>
+    public class AccessRole 
     {
         [Column("id")]
         public int Id { get; set; }
@@ -17,9 +17,6 @@ namespace CMS.src.Domain.Entities
         public bool CanEdit { get; set; }
         [Column("can_delete")]
         public bool CanDelete { get; set; }
-
-        //Collection
-        // Propiedad de navegación (opcional, para ver qué usuarios tienen este rol)
         public ICollection<User> Users { get; set; } = new List<User>();
     }
 }

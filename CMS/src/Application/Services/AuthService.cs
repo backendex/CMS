@@ -16,149 +16,116 @@ namespace CMS.src.Application.Services
         private readonly IApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
-        private readonly UserManager<User> _userManager;
 
-        public AuthService(UserManager<User> userManager,IApplicationDbContext context, IConfiguration configuration, IEmailService emailService)
+        public AuthService(IApplicationDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
             _emailService = emailService;
-            _userManager = userManager;
         }
 
-        public async Task<AuthResponse> RegisterAsync(RegisterDto registerDto)
-        {
-            var userExists = await _context.Users.AnyAsync(u => u.Email == registerDto.Email);
-            if (userExists) return new AuthResponse(false, "El correo ya existe.", null);
-
-            var newUser = new User
-            {
-                Email = registerDto.Email,
-                RolId = registerDto.RolId,
-
-                // Configuración inicial
-                IsActive = false,
-                ValidationToken = Guid.NewGuid().ToString() 
-            };
-
-            _context.Users.Add(newUser);
-            await _context.SaveChangesAsync();          
-
-            string activationLink = $"https://localhost:44351/api/Auth/activate?token={newUser.ValidationToken}";
-
-            string htmlBody = $@"
-        <div style='font-family: sans-serif; padding: 20px; border: 1px solid #ddd;'>
-            <h2>Confirma tu cuenta</h2>
-            <p>Gracias por unirte al CMS. Haz clic en el botón para activar tu acceso:</p>
-            <a href='{activationLink}' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-                Activar Cuenta
-            </a>
-        </div>";
-
-            await _emailService.SendEmailAsync(newUser.Email, "Activa tu cuenta de CMS", htmlBody);
-
-            return new AuthResponse(true, "Usuario registrado. Revise su correo para activar su cuenta.", null);
-        }
-        public async Task<IdentityResult> RegisterByAdminAsync(RegisterDto model)
+        //Registro de usuarios admin
+        public async Task<bool> RegisterByAdminAsync(RegisterDto registerDto)
         {
             var customRole = await _context.AccessRoles
-                .FirstOrDefaultAsync(r => r.Id == model.RolId);
+                .FirstOrDefaultAsync(r => r.Id == registerDto.RolId);
 
             if (customRole == null)
-            {
-                return IdentityResult.Failed(new IdentityError { Description = "El rol especificado no existe." });
-            }
+                throw new Exception("El rol especificado no existe.");
 
             var tempPassword = GenerateRandomPassword();
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+            var rawToken = Guid.NewGuid().ToString();
 
             var user = new User
             {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.FullName,
+                Email = registerDto.Email,
+                Name = registerDto.Name,
+                LastName = registerDto.LastName,
                 RolId = customRole.Id,
-                EmailConfirmed = false
+                PasswordHash = hashedPassword,
+                IsTemporaryPassword = true,
+                IsActive = false,
+                ValidationToken = rawToken
+
             };
 
-            var result = await _userManager.CreateAsync(user, tempPassword);
+            _context.Users.Add(user);
+            //Aqui hay un bug
+            var result = await _context.SaveChangesAsync();
 
-            if (result.Succeeded)
+            if (result > 0)
             {
-
-                await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, customRole.NameRol));
-
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-                var confirmationLink = $"https://tu-frontend.com/confirmar?userId={user.Id}&token={encodedToken}";
-
+                var confirmationLink = $"https://localhost:44351/api/auth/confirm-account?email={user.Email}&token={rawToken}";
                 await _emailService.SendWelcomeEmail(user.Email, tempPassword, confirmationLink);
 
-                return result;
+                return true;
             }
-            return result;
+
+            return false;
         }
+
         private string GenerateRandomPassword()
         {
             return Guid.NewGuid().ToString("N").Substring(0, 10) + "A1!";
         }
 
-        public async Task<AuthResponse> LoginAsync(LoginDto dto)
+        public async Task<LoginResult> LoginAsync(LoginDto loginDto)
         {
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
-                return new AuthResponse(false, "Credenciales inválidas", null);
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-            if (!user.EmailConfirmed)
-                return new AuthResponse(false, "Cuenta no confirmada", null);
+            if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+            {
+                string myJwt = GenerateToken(user);
 
-            var passwordOk = await _userManager.CheckPasswordAsync(user, dto.Password);
-            if (!passwordOk)
-                return new AuthResponse(false, "Credenciales inválidas", null);
+                return new LoginResult
+                {
+                    Success = true,
+                    Token = myJwt,
+                    MustChangePassword = user.IsTemporaryPassword
+                };
+            }
 
-            var token = await GenerateJwtTokenAsync(user);
-
-            return new AuthResponse(true, "Login exitoso", token);
+            return new LoginResult { Success = false, Message = "Credenciales inválidas" };
         }
 
 
         public async Task<User?> FindByEmailAsync(string email)
-         => await _userManager.FindByEmailAsync(email);
+        {
+            return await _context.Users
+                .Include(u => u.AccessRole)
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
 
         public async Task<bool> CheckPasswordAsync(User user, string password)
-            => await _userManager.CheckPasswordAsync(user, password);
-
-  
-        public async Task<string> GenerateJwtTokenAsync(User user)
         {
-            var roles = await _userManager.GetRolesAsync(user);
+            if (string.IsNullOrEmpty(user.PasswordHash)) return false;
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, user.Email!)
+            return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+        }
+
+        private string GenerateToken(User user)
+        {
+            var claims = new[]
+    {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim("IsTemporary", user.IsTemporaryPassword.ToString())
             };
-
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
-
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]!)
-            );
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["JwtSettings:Issuer"],
-                audience: _configuration["JwtSettings:Audience"],
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
+                expires: DateTime.Now.AddDays(1),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
         public async Task<AuthResponse> ActivateAccountAsync(string token)
         {
             var user = await _context.Users
@@ -175,6 +142,18 @@ namespace CMS.src.Application.Services
             await _context.SaveChangesAsync();
 
             return new AuthResponse(true, "¡Cuenta activada con éxito! Ya puedes iniciar sesión.", null);
+        }
+        public async Task<bool> ConfirmAccountAsync(string email, string token)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.ValidationToken == token);
+
+            if (user == null) return false;
+
+            user.IsActive = true;         
+            user.ValidationToken = null;   
+
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

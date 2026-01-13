@@ -4,14 +4,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CMS.src.Domain.Entities
 {
-    // Entities/User.cs
-    public class User : IdentityUser<int>
+    public class User
     {
         //Estructura tal cual se define en la base de datos
         [Column("id")]
         public int Id { get; set; }
         [Column("user_name")]
         public string UserName { get; set; }
+        [Column("name")]
+        public string Name { get; init; }
+        [Column("last_name")]
+        public string LastName { get; init; }
         [Column("email")]
         public string Email { get; set; } = string.Empty;
         [Column("password")]
@@ -20,12 +23,15 @@ namespace CMS.src.Domain.Entities
         public int RolId { get; set; }
         [Column("full_name")]
         public string FullName{ get; set; } = null!;
+        public bool IsTemporaryPassword { get; set; } = true;
+        [Column("password_hash")]
+        public string? PasswordHash { get; set; }
 
-        // Nuevos campos necesarios para la validación
         [Column("is_active")]
-        public bool IsActive { get; set; } = false;
+        public bool IsActive { get; set; }
         public string? ValidationToken { get; set; }
-        public bool EmailConfirmed { get; set; } = false;
+        [Column("email_confirmed")]
+        public bool EmailConfirmed { get; set; }
 
         [ForeignKey("RolId")]
         public virtual AccessRole AccessRole { get; set; } = null!;

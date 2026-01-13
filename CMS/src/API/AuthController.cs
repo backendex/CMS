@@ -22,32 +22,29 @@ namespace CMS.API.Controllers
             _authService = authService;
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            
-            var result = await _authService.RegisterAsync(registerDto);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
-        }
-
         //[Authorize(Roles = "Admin")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
-            var result = await _authService.RegisterByAdminAsync(registerDto);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (result.Succeeded)
+            try
             {
-                return Ok(new { message = "Usuario creado exitosamente por el administrador." });
-            }
+                // Ahora el servicio devuelve un bool o lanza una excepción si algo falla
+                var result = await _authService.RegisterByAdminAsync(registerDto);
 
-            return BadRequest(result.Errors);
+                if (result)
+                {
+                    return Ok(new { message = "Usuario creado exitosamente. Se ha enviado un correo con la clave temporal" });
+                }
+
+                return BadRequest(new { message = "No se pudo crear el usuario." });
+            }
+            catch (Exception ex)
+            {
+                // Capturamos errores como "El rol no existe" o "El email ya está registrado"
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("login")]
@@ -82,11 +79,17 @@ namespace CMS.API.Controllers
         }
 
         //Para realizar pruebas de api
-
         [HttpGet("ping")]
         public IActionResult Ping()
         {
             return Ok(new { message = "API conectada correctamente 🚀" });
+        }
+
+        [HttpGet("confirm-account")]
+        public async Task<IActionResult> ConfirmAccount([FromQuery] string email, [FromQuery] string token)
+        {
+            var success = await _authService.ConfirmAccountAsync(email, token);
+            return success ? Ok("Cuenta activada") : BadRequest("Token inválido");
         }
 
 

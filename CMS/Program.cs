@@ -3,7 +3,6 @@ using CMS.src.Application.Interfaces;
 using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -22,47 +21,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
     provider.GetRequiredService<ApplicationDbContext>());
 
+// Inyección de tus servicios personalizados
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 #endregion
 
-#region IDENTITY
-
-builder.Services.AddIdentity<User, AccessRole>(options =>
-{
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireLowercase = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
-
-// Evitar redirecciones HTML en APIs
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Events.OnRedirectToLogin = context =>
-    {
-        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        return Task.CompletedTask;
-    };
-});
-
-#endregion
-
-#region JWT AUTHENTICATION (⚠️ SOLO UNA VEZ)
+#region JWT AUTHENTICATION
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
-
 var jwtKey = jwtSection.GetValue<string>("Key");
 var issuer = jwtSection.GetValue<string>("Issuer");
 var audience = jwtSection.GetValue<string>("Audience");
 
 if (string.IsNullOrWhiteSpace(jwtKey))
 {
-    throw new Exception("❌ JwtSettings:Key no configurado en appsettings.json");
+    throw new Exception("JwtSettings:Key no configurado en appsettings.json");
 }
 
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
@@ -100,11 +74,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireAdminRole", policy =>
-        policy.RequireRole("Admin"));
-
-    options.AddPolicy("RequireUserRole", policy =>
-        policy.RequireRole("User"));
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
 });
 
 #endregion
@@ -131,11 +102,7 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "CMS API",
-        Version = "v1"
-    });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CMS API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -152,11 +119,7 @@ builder.Services.AddSwaggerGen(c =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Id = "Bearer",
-                    Type = ReferenceType.SecurityScheme
-                }
+                Reference = new OpenApiReference { Id = "Bearer", Type = ReferenceType.SecurityScheme }
             },
             Array.Empty<string>()
         }
@@ -176,7 +139,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseCors("AllowReact");
 
 app.UseAuthentication();

@@ -7,12 +7,11 @@ namespace CMS.src.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<AuthResponse> LoginAsync(LoginDto dto);
-        Task<AuthResponse> RegisterAsync(RegisterDto dto);
-        Task<IdentityResult> RegisterByAdminAsync(RegisterDto dto);
+        Task<LoginResult> LoginAsync(LoginDto dto);
+        Task<bool> RegisterByAdminAsync(RegisterDto registerDto);
         Task<AuthResponse> ActivateAccountAsync(string token);
         Task<User?> FindByEmailAsync(string email);
         Task<bool> CheckPasswordAsync(User user, string password);
-
+        Task<bool> ConfirmAccountAsync(string email, string token);
     }
 }

@@ -37,15 +37,19 @@ namespace CMS.src.Application.Services
             email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
 
             using var smtp = new SmtpClient();
+
+            smtp.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
             await smtp.ConnectAsync(
                 _config["EmailSettings:Server"],
                 int.Parse(_config["EmailSettings:Port"]!),
-                MailKit.Security.SecureSocketOptions.StartTls
+                MailKit.Security.SecureSocketOptions.Auto
             );
 
             await smtp.AuthenticateAsync(_config["EmailSettings:Username"], _config["EmailSettings:Password"]);
             await smtp.SendAsync(email);
             await smtp.DisconnectAsync(true);
         }
+
     }
 }
