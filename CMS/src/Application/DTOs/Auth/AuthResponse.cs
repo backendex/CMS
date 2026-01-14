@@ -12,7 +12,11 @@
         {
             Success = success;
             Message = message;
-            Token = token
+            Token = token;
     }   }    
 }
+
+
+
+
 

@@ -19,7 +19,7 @@ namespace CMS.src.Domain.Entities
         public string Email { get; set; } = string.Empty;
         [Column("password")]
         public string Password { get; set; } = string.Empty;
-        [Column("roi_id")]
+        [Column("rol_id")]
         public int RolId { get; set; }
         [Column("full_name")]
         public string FullName{ get; set; } = null!;

@@ -23,6 +23,7 @@ namespace CMS.API.Controllers
         }
 
         //[Authorize(Roles = "Admin")]
+        [AllowAnonymous]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -30,7 +31,6 @@ namespace CMS.API.Controllers
 
             try
             {
-                // Ahora el servicio devuelve un bool o lanza una excepción si algo falla
                 var result = await _authService.RegisterByAdminAsync(registerDto);
 
                 if (result)
@@ -55,18 +55,28 @@ namespace CMS.API.Controllers
             if (user == null)
                 return Unauthorized("Credenciales inválidas");
 
-            if (!user.EmailConfirmed)
+            if (!user.IsActive)
                 return Unauthorized("Cuenta no confirmada");
 
             var passwordOk = await _authService.CheckPasswordAsync(user, dto.Password);
             if (!passwordOk)
                 return Unauthorized("Credenciales inválidas");
 
+            //Para devolvr el token
 
-            return Ok(new
+            try
             {
-                
-            });
+                var result = await _authService.LoginAsync(dto);
+                if (!result.Success)
+                    return Unauthorized(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message + " | " + ex.InnerException?.Message);
+            }
+
         }
 
         [HttpGet("activate")]
@@ -78,20 +88,23 @@ namespace CMS.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("confirm-account")]
+        public async Task<IActionResult> ConfirmAccount([FromQuery] string email, [FromQuery] string token)
+        {
+            var success = await _authService.ConfirmAccountAsync(email, token);
+            if (success)
+            {
+                return Redirect("http://localhost:5173/login?activated=true");
+            }
+            return BadRequest("Token inválido o expirado");
+        }
+       
         //Para realizar pruebas de api
         [HttpGet("ping")]
         public IActionResult Ping()
         {
             return Ok(new { message = "API conectada correctamente 🚀" });
         }
-
-        [HttpGet("confirm-account")]
-        public async Task<IActionResult> ConfirmAccount([FromQuery] string email, [FromQuery] string token)
-        {
-            var success = await _authService.ConfirmAccountAsync(email, token);
-            return success ? Ok("Cuenta activada") : BadRequest("Token inválido");
-        }
-
 
     }
 }

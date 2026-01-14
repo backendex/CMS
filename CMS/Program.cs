@@ -8,6 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,16 +33,19 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 #region JWT AUTHENTICATION
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
-var jwtKey = jwtSection.GetValue<string>("Key");
+var jwtKey = jwtSection["Key"]; // Acceso directo
 var issuer = jwtSection.GetValue<string>("Issuer");
 var audience = jwtSection.GetValue<string>("Audience");
+var secret = builder.Configuration["JwtSettings:Key"]; 
+var keyBytes = Encoding.UTF8.GetBytes(secret);
+var key = new SymmetricSecurityKey(keyBytes);
+
+Console.WriteLine($"DEBUG: La clave leída es: {jwtKey}");
 
 if (string.IsNullOrWhiteSpace(jwtKey))
 {
     throw new Exception("JwtSettings:Key no configurado en appsettings.json");
 }
-
-var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -55,16 +61,22 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidIssuer = issuer,
         ValidAudience = audience,
-
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero,
+        RoleClaimType = "role"
+    };
 
-        RoleClaimType = ClaimTypes.Role
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine("DEBUG AUTH: Falló por: " + context.Exception.Message);
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -139,6 +151,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowReact");
 
 app.UseAuthentication();
