@@ -7,8 +7,6 @@ namespace CMS.src.Application.Interfaces
     {
         DbSet<User> Users { get; }
         DbSet<AccessRole> AccessRoles { get; }
-
-        // El método para guardar cambios
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

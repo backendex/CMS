@@ -6,7 +6,6 @@ namespace CMS.src.Domain.Entities
 {
     public class User
     {
-        //Estructura tal cual se define en la base de datos
         [Column("id")]
         public int Id { get; set; }
         [Column("user_name")]

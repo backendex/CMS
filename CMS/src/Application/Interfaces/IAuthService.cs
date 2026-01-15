@@ -13,5 +13,7 @@ namespace CMS.src.Application.Interfaces
         Task<User?> FindByEmailAsync(string email);
         Task<bool> CheckPasswordAsync(User user, string password);
         Task<bool> ConfirmAccountAsync(string email, string token);
+        Task<IEnumerable<User>> GetAllUsersAsync(); // O usa un DTO si no quieres exponer toda la entidad
+        Task<AuthResult> ChangePasswordAsync(string email, string currentPassword, string newPassword);
     }
 }

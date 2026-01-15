@@ -123,10 +123,8 @@ namespace CMS.src.Application.Services
 
         private string GenerateToken(User user)
         {
-            // 1. Extraer la clave exactamente igual que en Program.cs
             var secret = _configuration["JwtSettings:Key"];
 
-            // Validación de seguridad por si el archivo no se lee
             if (string.IsNullOrEmpty(secret))
                 throw new Exception("La clave JWT no se encontró en la configuración.");
 
@@ -134,22 +132,20 @@ namespace CMS.src.Application.Services
             var key = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // 2. Definir los Claims (Asegúrate de importar System.IdentityModel.Tokens.Jwt)
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // ID único del token
-                new Claim("role", "Admin"), // Coincide con RoleClaimType = "role"
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), 
+                new Claim("role", "Admin"), 
                 new Claim("IsTemporary", user.IsTemporaryPassword.ToString())
             };
 
-            // 3. Crear el token usando JwtSettings
             var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1), // Importante usar UtcNow
+                expires: DateTime.UtcNow.AddHours(1), 
                 signingCredentials: creds
             );
 
@@ -185,12 +181,55 @@ namespace CMS.src.Application.Services
 
             await _context.SaveChangesAsync();
 
-            //console log para depurar y visualizar que esta devolviendo
             Console.WriteLine($"Usuario {user.Email} activado correctamente. IsActive en memoria: {user.IsActive}");
             await _context.SaveChangesAsync();
 
             return true;
 
+        }
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _context.Users
+                .OrderByDescending(u => u.Id)
+                .ToListAsync();
+        }
+
+        public async Task<AuthResult> ChangePasswordAsync(string email, string currentPassword, string newPassword)
+        {
+            // 1. Buscar al usuario directamente en la tabla con LINQ
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+                return new AuthResult { Success = false, Message = "Usuario no encontrado" };
+
+            // 2. Verificar la contraseña actual (Hash vs Plano)
+            // Usamos el Hasher manual porque el contexto no sabe comparar claves
+            var hasher = new PasswordHasher<User>();
+            var verificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                return new AuthResult { Success = false, Message = "La contraseña temporal es incorrecta" };
+            }
+
+            // 3. Hashear la nueva contraseña y actualizar el usuario
+            user.PasswordHash = hasher.HashPassword(user, newPassword);
+
+            // 4. Cambiar el estado de la clave temporal
+            user.IsTemporaryPassword = false;
+
+            try
+            {
+                // 5. Guardar cambios en PostgreSQL
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                return new AuthResult { Success = true, Message = "Contraseña actualizada correctamente" };
+            }
+            catch (Exception ex)
+            {
+                return new AuthResult { Success = false, Message = "Error en base de datos: " + ex.Message };
+            }
         }
     }
 }

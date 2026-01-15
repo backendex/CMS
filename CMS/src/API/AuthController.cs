@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Text;
 
 namespace CMS.API.Controllers
@@ -42,7 +44,6 @@ namespace CMS.API.Controllers
             }
             catch (Exception ex)
             {
-                // Capturamos errores como "El rol no existe" o "El email ya está registrado"
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -61,8 +62,6 @@ namespace CMS.API.Controllers
             var passwordOk = await _authService.CheckPasswordAsync(user, dto.Password);
             if (!passwordOk)
                 return Unauthorized("Credenciales inválidas");
-
-            //Para devolvr el token
 
             try
             {
@@ -99,12 +98,45 @@ namespace CMS.API.Controllers
             return BadRequest("Token inválido o expirado");
         }
        
-        //Para realizar pruebas de api
         [HttpGet("ping")]
         public IActionResult Ping()
         {
             return Ok(new { message = "API conectada correctamente 🚀" });
         }
 
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            try
+            {
+                var users = await _authService.GetAllUsersAsync();
+                return Ok(users); 
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la lista", error = ex.Message });
+            }
+        }
+
+        //[Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            if (string.IsNullOrEmpty(email))
+                return Unauthorized(new { message = "Usuario no identificado en el token" });
+
+            var result = await _authService.ChangePasswordAsync(email, dto.CurrentPassword, dto.NewPassword);
+
+            if (result.Success)
+            {
+                return Ok(new { message = result.Message });
+            }
+
+            return BadRequest(new { message = result.Message });
+        }
     }
 }
