@@ -48,7 +48,8 @@ namespace CMS.src.Application.Services
                 PasswordHash = hashedPassword,
                 FullName = $"{registerDto.Name} {registerDto.LastName}",
                 IsTemporaryPassword = true,
-                IsActive = true, 
+                IsActive = true,
+                MustChangePassword = true,
                 ValidationToken = rawToken
             };
 
@@ -217,6 +218,7 @@ namespace CMS.src.Application.Services
 
             // 4. Cambiar el estado de la clave temporal
             user.IsTemporaryPassword = false;
+            user.MustChangePassword = false;
 
             try
             {

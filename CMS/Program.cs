@@ -105,6 +105,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+
 #endregion
 
 #region CONTROLLERS & SWAGGER
@@ -153,6 +154,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowReact");
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

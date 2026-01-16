@@ -118,25 +118,40 @@ namespace CMS.API.Controllers
             }
         }
 
+        ////[Authorize]
+        //[HttpPost("change-password")]
+        //public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        //{
+        //    if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        //    var email = User.FindFirst(ClaimTypes.Email)?.Value;
+
+        //    if (string.IsNullOrEmpty(email))
+        //        return Unauthorized(new { message = "Usuario no identificado en el token" });
+
+        //    var result = await _authService.ChangePasswordAsync(email, dto.CurrentPassword, dto.NewPassword);
+
+        //    if (result.Success)
+        //    {
+        //        return Ok(new { message = result.Message });
+        //    }
+
+        //    return BadRequest(new { message = result.Message });
+        //}
+
         //[Authorize]
-        [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        [HttpPost("update-password")]
+        public async Task<IActionResult> UpdatePassword([FromBody] ChangePasswordDto request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            // Llamamos a tu método ChangePasswordAsync
+            var result = await _authService.ChangePasswordAsync(request.Email, request.CurrentPassword, request.NewPassword);
 
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-
-            if (string.IsNullOrEmpty(email))
-                return Unauthorized(new { message = "Usuario no identificado en el token" });
-
-            var result = await _authService.ChangePasswordAsync(email, dto.CurrentPassword, dto.NewPassword);
-
-            if (result.Success)
+            if (!result.Success)
             {
-                return Ok(new { message = result.Message });
+                return BadRequest(new { message = result.Message });
             }
 
-            return BadRequest(new { message = result.Message });
+            return Ok(new { message = result.Message });
         }
     }
 }

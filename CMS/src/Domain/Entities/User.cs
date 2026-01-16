@@ -23,6 +23,8 @@ namespace CMS.src.Domain.Entities
         [Column("full_name")]
         public string FullName{ get; set; } = null!;
         public bool IsTemporaryPassword { get; set; } = true;
+        public bool MustChangePassword { get; set; } = true;
+
         [Column("password_hash")]
         public string? PasswordHash { get; set; }
 
