@@ -87,6 +87,7 @@ namespace CMS.src.Application.Services
                 .Include(u => u.AccessRole)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
+
             if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
             {
                 string myJwt = GenerateToken(user);
@@ -107,6 +108,7 @@ namespace CMS.src.Application.Services
 
             return new LoginResult { Success = false, Message = "Credenciales inválidas" };
         }
+
 
         public async Task<User?> FindByEmailAsync(string email)
         {

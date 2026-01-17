@@ -13,4 +13,6 @@ namespace CMS.src.Application.DTOs.Auth
         [JsonPropertyName("role")]
         public string Role { get; set; }
     }
+
+
 }
