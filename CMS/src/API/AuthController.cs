@@ -51,31 +51,24 @@ namespace CMS.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var user = await _authService.FindByEmailAsync(dto.Email);
-
-            if (user == null)
-                return Unauthorized("Credenciales inválidas");
-
-            if (!user.IsActive)
-                return Unauthorized("Cuenta no confirmada");
-
-            var passwordOk = await _authService.CheckPasswordAsync(user, dto.Password);
-            if (!passwordOk)
-                return Unauthorized("Credenciales inválidas");
-
             try
             {
+                // Deja que el servicio haga todo el trabajo pesado
                 var result = await _authService.LoginAsync(dto);
-                if (!result.Success)
-                    return Unauthorized(result.Message);
 
+                if (!result.Success)
+                {
+                    // Si el mensaje es por cuenta no activa, podrías personalizarlo
+                    return Unauthorized(new { message = result.Message });
+                }
+
+                // Aquí devuelves TODO el objeto result, que incluye MustChangePassword, Token, etc.
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message + " | " + ex.InnerException?.Message);
             }
-
         }
 
         [HttpGet("activate")]
@@ -90,14 +83,24 @@ namespace CMS.API.Controllers
         [HttpGet("confirm-account")]
         public async Task<IActionResult> ConfirmAccount([FromQuery] string email, [FromQuery] string token)
         {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+            {
+                return BadRequest("Faltan parámetros.");
+            }
+
+            // Ejecutamos la lógica
             var success = await _authService.ConfirmAccountAsync(email, token);
+
             if (success)
             {
-                return Redirect("http://localhost:5173/login?activated=true");
+                // ESTA ES LA CLAVE: Redirigir al puerto de tu Frontend (React)
+                return Redirect($"http://localhost:5173/login?activated=true&email={email}");
             }
-            return BadRequest("Token inválido o expirado");
+
+            return BadRequest("El enlace es inválido o expiró.");
         }
-       
+
+
         [HttpGet("ping")]
         public IActionResult Ping()
         {

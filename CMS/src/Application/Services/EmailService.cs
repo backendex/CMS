@@ -38,15 +38,22 @@ namespace CMS.src.Application.Services
 
             using var smtp = new SmtpClient();
 
+            // Esto está bien, ignora certificados no válidos
             smtp.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
             await smtp.ConnectAsync(
                 _config["EmailSettings:Server"],
                 int.Parse(_config["EmailSettings:Port"]!),
-                MailKit.Security.SecureSocketOptions.Auto
+                MailKit.Security.SecureSocketOptions.None // <-- CAMBIA 'Auto' por 'None'
             );
 
-            await smtp.AuthenticateAsync(_config["EmailSettings:Username"], _config["EmailSettings:Password"]);
+            // Si Username está vacío, algunos servidores SMTP fallan al autenticar.
+            // Con Mailpit puedes comentar la línea de Authenticate o dejarla si el string es vacío.
+            if (!string.IsNullOrEmpty(_config["EmailSettings:Username"]))
+            {
+                await smtp.AuthenticateAsync(_config["EmailSettings:Username"], _config["EmailSettings:Password"]);
+            }
+
             await smtp.SendAsync(email);
             await smtp.DisconnectAsync(true);
         }

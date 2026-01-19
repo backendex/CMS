@@ -24,6 +24,11 @@ namespace CMS.src.Application.Services
             _emailService = emailService;
         }
 
+        public async Task UpdateUserAsync(User user)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        }
         //Registro de usuarios admin
         public async Task<bool> RegisterByAdminAsync(RegisterDto registerDto)
         {
@@ -36,7 +41,6 @@ namespace CMS.src.Application.Services
             var tempPassword = GenerateRandomPassword();
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(tempPassword);
             var rawToken = Guid.NewGuid().ToString();
-
 
             var user = new User
             {
@@ -55,25 +59,28 @@ namespace CMS.src.Application.Services
 
             _context.Users.Add(user);
 
+            // 1. Intentamos guardar en la base de datos primero
             try
             {
-                var result = await _context.SaveChangesAsync();
-
-                if (result > 0)
-                {
-                    var confirmationLink = $"https://localhost:44351/api/auth/confirm-account?email={user.Email}&token={rawToken}";
-                    await _emailService.SendWelcomeEmail(user.Email, tempPassword, confirmationLink);
-
-                    return true;
-                }
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                var mensajeReal = ex.InnerException?.Message;
-                throw;
+                var mensajeReal = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception($"Error al guardar en BD: {mensajeReal}");
+            }
+            try
+            {
+                var confirmationLink = $"https://localhost:44351/api/auth/confirm-account?email={user.Email}&token={rawToken}";
+
+                await _emailService.SendWelcomeEmail(user.Email, tempPassword, confirmationLink);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enviando email a {user.Email}: {ex.Message}");
             }
 
-            return false;
+            return true;
         }
 
         private string GenerateRandomPassword()
@@ -83,9 +90,13 @@ namespace CMS.src.Application.Services
 
         public async Task<LoginResult> LoginAsync(LoginDto loginDto)
         {
-            var user = await _context.Users
-                .Include(u => u.AccessRole)
-                .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+                return new LoginResult { Success = false, Message = "Credenciales inválidas" };
+
+            if (!user.IsActive) 
+                return new LoginResult { Success = false, Message = "Cuenta no confirmada" }; 
 
 
             if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
@@ -205,8 +216,6 @@ namespace CMS.src.Application.Services
             if (user == null)
                 return new AuthResult { Success = false, Message = "Usuario no encontrado" };
 
-            // 2. Verificar la contraseña actual (Hash vs Plano)
-            // Usamos el Hasher manual porque el contexto no sabe comparar claves
             var hasher = new PasswordHasher<User>();
             var verificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
 
@@ -224,7 +233,6 @@ namespace CMS.src.Application.Services
 
             try
             {
-                // 5. Guardar cambios en PostgreSQL
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
 
