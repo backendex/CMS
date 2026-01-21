@@ -47,8 +47,6 @@ namespace CMS.src.Application.Services
                 MailKit.Security.SecureSocketOptions.None // <-- CAMBIA 'Auto' por 'None'
             );
 
-            // Si Username está vacío, algunos servidores SMTP fallan al autenticar.
-            // Con Mailpit puedes comentar la línea de Authenticate o dejarla si el string es vacío.
             if (!string.IsNullOrEmpty(_config["EmailSettings:Username"]))
             {
                 await smtp.AuthenticateAsync(_config["EmailSettings:Username"], _config["EmailSettings:Password"]);

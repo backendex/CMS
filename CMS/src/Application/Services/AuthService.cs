@@ -29,7 +29,7 @@ namespace CMS.src.Application.Services
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
-        //Registro de usuarios admin
+
         public async Task<bool> RegisterByAdminAsync(RegisterDto registerDto)
         {
             var customRole = await _context.AccessRoles
@@ -86,7 +86,7 @@ namespace CMS.src.Application.Services
         private string GenerateRandomPassword()
         {
             return Guid.NewGuid().ToString("N").Substring(0, 10) + "A1!";
-        }
+        }                  
 
         public async Task<LoginResult> LoginAsync(LoginDto loginDto)
         {
@@ -119,8 +119,6 @@ namespace CMS.src.Application.Services
 
             return new LoginResult { Success = false, Message = "Credenciales inválidas" };
         }
-
-
         public async Task<User?> FindByEmailAsync(string email)
         {
             return await _context.Users
@@ -165,7 +163,6 @@ namespace CMS.src.Application.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
         public async Task<AuthResponse> ActivateAccountAsync(string token)
         {
             var user = await _context.Users
@@ -224,10 +221,8 @@ namespace CMS.src.Application.Services
                 return new AuthResult { Success = false, Message = "La contraseña temporal es incorrecta" };
             }
 
-            // 3. Hashear la nueva contraseña y actualizar el usuario
             user.PasswordHash = hasher.HashPassword(user, newPassword);
 
-            // 4. Cambiar el estado de la clave temporal
             user.IsTemporaryPassword = false;
             user.MustChangePassword = false;
 

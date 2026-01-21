@@ -62,8 +62,11 @@ namespace CMS.API.Controllers
                     return Unauthorized(new { message = result.Message });
                 }
 
-                // Aquí devuelves TODO el objeto result, que incluye MustChangePassword, Token, etc.
-                return Ok(result);
+                return Ok(new
+                {
+                    token = result.Token,
+                    mustChangePassword = result.MustChangePassword
+                });
             }
             catch (Exception ex)
             {
