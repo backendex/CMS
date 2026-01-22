@@ -2,13 +2,14 @@
 using CMS.src.Application.Interfaces;
 using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
+using CMS.src.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.IdentityModel.Tokens.Jwt;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -27,6 +28,8 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
 // Inyección de tus servicios personalizados
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPostService, PostRepository>();
+builder.Services.AddScoped<PostService>();
 
 #endregion
 
@@ -61,13 +64,15 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidIssuer = issuer,
         ValidAudience = audience,
+
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero,
-        RoleClaimType = "role"
+        RoleClaimType = ClaimTypes.Role
     };
 
     options.Events = new JwtBearerEvents
@@ -80,14 +85,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
 #endregion
 
 #region AUTHORIZATION / POLICIES
-
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("User"));
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+
+    options.AddPolicy("CanPublish", policy =>
+        policy.RequireRole("Admin", "Editor"));
+
+    options.AddPolicy("CanWrite", policy =>
+        policy.RequireRole("Admin", "Editor", "Author"));
 });
 
 #endregion

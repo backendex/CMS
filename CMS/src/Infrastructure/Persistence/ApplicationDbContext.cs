@@ -11,7 +11,7 @@ namespace CMS.Infrastructure.Persistence
 
         public DbSet<User> Users => Set<User>();
         public DbSet<AccessRole> AccessRoles => Set<AccessRole>();
-
+        public DbSet<Post> Posts => Set<Post>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -35,7 +35,6 @@ namespace CMS.Infrastructure.Persistence
                 entity.Property(e => e.CanEdit).HasColumnName("can_edit");
                 entity.Property(e => e.CanDelete).HasColumnName("can_delete");
             });
-
             modelBuilder.Entity<User>(entity => {
                 entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
             });

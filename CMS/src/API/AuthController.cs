@@ -23,9 +23,8 @@ namespace CMS.API.Controllers
         {
             _authService = authService;
         }
-
-        //[Authorize(Roles = "Admin")]
-        [AllowAnonymous]
+        //Aqui una llave de admin
+        [Authorize(Roles = "Admin")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -53,12 +52,10 @@ namespace CMS.API.Controllers
         {
             try
             {
-                // Deja que el servicio haga todo el trabajo pesado
                 var result = await _authService.LoginAsync(dto);
 
                 if (!result.Success)
                 {
-                    // Si el mensaje es por cuenta no activa, podrías personalizarlo
                     return Unauthorized(new { message = result.Message });
                 }
 

@@ -1,9 +1,12 @@
 ﻿using CMS.src.Application.DTOs.Auth;
+using CMS.src.Application.DTOs.Post;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
+using CMS.src.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -59,7 +62,6 @@ namespace CMS.src.Application.Services
 
             _context.Users.Add(user);
 
-            // 1. Intentamos guardar en la base de datos primero
             try
             {
                 await _context.SaveChangesAsync();
@@ -148,10 +150,10 @@ namespace CMS.src.Application.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), 
-                new Claim("role", "Admin"), 
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Role, "Admin"),
                 new Claim("IsTemporary", user.IsTemporaryPassword.ToString())
-            };
+           };
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
@@ -238,5 +240,6 @@ namespace CMS.src.Application.Services
                 return new AuthResult { Success = false, Message = "Error en base de datos: " + ex.Message };
             }
         }
+      
     }
 }
