@@ -11,7 +11,8 @@ namespace CMS.Infrastructure.Persistence
 
         public DbSet<User> Users => Set<User>();
         public DbSet<AccessRole> AccessRoles => Set<AccessRole>();
-        public DbSet<Post> Posts => Set<Post>();
+
+        public object PostTranslations { get; internal set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

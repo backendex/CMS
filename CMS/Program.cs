@@ -26,10 +26,11 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
     provider.GetRequiredService<ApplicationDbContext>());
 
 // Inyección de tus servicios personalizados
-builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IPostService, PostRepository>();
-builder.Services.AddScoped<PostService>();
+builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
+
+
+
 
 #endregion
 

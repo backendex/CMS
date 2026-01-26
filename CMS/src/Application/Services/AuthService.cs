@@ -44,6 +44,7 @@ namespace CMS.src.Application.Services
             var tempPassword = GenerateRandomPassword();
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(tempPassword);
             var rawToken = Guid.NewGuid().ToString();
+            
 
             var user = new User
             {
@@ -60,6 +61,8 @@ namespace CMS.src.Application.Services
                 ValidationToken = rawToken
             };
 
+            var full_name = user.Name + " " + user.LastName;
+
             _context.Users.Add(user);
 
             try
@@ -71,19 +74,27 @@ namespace CMS.src.Application.Services
                 var mensajeReal = ex.InnerException?.Message ?? ex.Message;
                 throw new Exception($"Error al guardar en BD: {mensajeReal}");
             }
+
             try
             {
-                var confirmationLink = $"https://localhost:44351/api/auth/confirm-account?email={user.Email}&token={rawToken}";
+                var confirmationLink =
+                    $"https://localhost:44351/api/auth/confirm-account?token={rawToken}";
 
-                await _emailService.SendWelcomeEmail(user.Email, tempPassword, confirmationLink);
+                await _emailService.SendWelcomeEmail(
+                    user.Email,
+                    fullName : full_name,
+                    tempPassword,
+                    confirmationLink
+                );
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error enviando email a {user.Email}: {ex.Message}");
+                Console.WriteLine($"Error enviando correo: {ex.Message}");
             }
 
             return true;
         }
+
 
         private string GenerateRandomPassword()
         {
@@ -99,7 +110,6 @@ namespace CMS.src.Application.Services
 
             if (!user.IsActive) 
                 return new LoginResult { Success = false, Message = "Cuenta no confirmada" }; 
-
 
             if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
             {
@@ -183,23 +193,24 @@ namespace CMS.src.Application.Services
             return new AuthResponse(true, "¡Cuenta activada con éxito! Ya puedes iniciar sesión.", null);
         }
 
-        public async Task<bool> ConfirmAccountAsync(string email, string token)
+        //Se implementa nuevo metodo para confirmar correo
+        public async Task<bool> ConfirmAccountAsync(string token)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower() && u.ValidationToken == token);
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.ValidationToken == token);
 
-            if (user == null) return false;
+            if (user == null)
+                return false;
 
-            user.IsActive = true;         
-            user.ValidationToken = null;   
+            user.IsActive = true;
+            user.ValidationToken = null;
+            user.MustChangePassword = false;
 
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine($"Usuario {user.Email} activado correctamente. IsActive en memoria: {user.IsActive}");
             await _context.SaveChangesAsync();
 
             return true;
-
         }
+
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             return await _context.Users

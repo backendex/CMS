@@ -2,7 +2,7 @@
 {
     public class CreatePostDto
     {
-        public string Title { get; set; } = null!;
-        public string Content { get; set; } = null!;
+        public Guid SiteId { get; set; }
+        public List<PostTranslationDto> Translations { get; set; } = new();
     }
 }

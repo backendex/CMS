@@ -2,7 +2,9 @@
 {
     public interface IEmailService
     {
-        Task SendEmailAsync(string to, string subject, string body);
-        Task SendWelcomeEmail(string email, string tempPassword, string confirmationLink);
+
+        Task SendEmailAsync(string to, string subject, string html);
+        Task SendWelcomeEmail(string email,string fullName, string tempPassword, string confirmationLink);
+
     }
 }

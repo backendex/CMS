@@ -1,49 +1,56 @@
-﻿using CMS.src.Application.DTOs.Post;
+﻿using CMS.Domain.Entities;
+using CMS.Infrastructure.Persistence;
+using CMS.src.Application.DTOs.Post;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
 using CMS.src.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Bcpg;
+using System;
 
 namespace CMS.src.Application.Services
 {
-    public class PostService
+    public class PostService : IPostService
     {
-        private readonly IPostService _postService;
+        private readonly IPostRepository _postRepository;
 
-        public PostService(IPostService repository)
+        public PostService(IPostRepository postRepository)
         {
-            _postService = repository;
+            _postRepository = postRepository;
         }
 
-        public async Task CreateAsync(CreatePostDto dto, Guid authorId)
+        public async Task CreateAsync(CreatePostDto dto, int authorId)
         {
-            var post = new Post(dto.Title, dto.Content, authorId);
-            await _postService.AddAsync(post);
-            await _postService.SaveChangesAsync();
+            var post = new Post(dto.SiteId, authorId);
+
+            foreach (var t in dto.Translations)
+            {
+                post.AddTranslation(
+                    new PostTranslation(
+                        post.Id,
+                        t.Language,
+                        t.Slug,
+                        t.Title,
+                        t.Content
+                    )
+                );
+            }
+
+
+            await _postRepository.AddAsync(post);
+            await _postRepository.SaveChangesAsync();
         }
 
         public async Task PublishAsync(Guid postId)
         {
-            var post = await _postService.GetByIdAsync(postId);
-            if (post is null)
-                throw new Exception("Post no encontrado");
+            var post = await _postRepository.GetByIdAsync(postId)
+                ?? throw new Exception("Post not found");
+    
 
             post.Publish();
-            await _postService.SaveChangesAsync();
-        }
-
-        public async Task<List<PostResponseDto>> GetAllAsync()
-        {
-            var posts = await _postService.GetAllAsync();
-
-            return posts.Select(p => new PostResponseDto
-            {
-                Id = p.Id,
-                Title = p.Title,
-                Content = p.Content,
-                Status = p.Status,
-                CreatedAt = p.CreatedAt
-            }).ToList();
+            await _postRepository.SaveChangesAsync();
         }
     }
+
 
 }

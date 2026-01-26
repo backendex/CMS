@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text;
 
-namespace CMS.API.Controllers
+namespace CMS.src.API.Controller
 {
     [ApiController]
     [Route("api/[controller]")] 
@@ -24,7 +24,7 @@ namespace CMS.API.Controllers
             _authService = authService;
         }
         //Aqui una llave de admin
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -80,31 +80,25 @@ namespace CMS.API.Controllers
             return Ok(result);
         }
 
+        //Nuevo controlador para pedir token
         [HttpGet("confirm-account")]
-        public async Task<IActionResult> ConfirmAccount([FromQuery] string email, [FromQuery] string token)
+        public async Task<IActionResult> ConfirmAccount([FromQuery] string token)
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
-            {
-                return BadRequest("Faltan parámetros.");
-            }
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("Token inválido");
 
-            // Ejecutamos la lógica
-            var success = await _authService.ConfirmAccountAsync(email, token);
+            var success = await _authService.ConfirmAccountAsync(token);
 
-            if (success)
-            {
-                // ESTA ES LA CLAVE: Redirigir al puerto de tu Frontend (React)
-                return Redirect($"http://localhost:5173/login?activated=true&email={email}");
-            }
+            if (!success)
+                return BadRequest("El enlace es inválido o expiró.");
 
-            return BadRequest("El enlace es inválido o expiró.");
+            return Redirect("http://localhost:5173/login?activated=true");
         }
-
 
         [HttpGet("ping")]
         public IActionResult Ping()
         {
-            return Ok(new { message = "API conectada correctamente 🚀" });
+            return Ok(new { message = "API conectada correctamente" });
         }
 
         [HttpGet("users")]
@@ -135,5 +129,16 @@ namespace CMS.API.Controllers
 
             return Ok(new { message = result.Message });
         }
+        [HttpGet("debug-config")]
+        public IActionResult DebugConfig(IConfiguration config)
+        {
+            return Ok(new
+            {
+                Env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                ApiKey = config["Resend:ApiKey"],
+                From = config["Resend:FromEmail"]
+            });
+        }
+
     }
 }

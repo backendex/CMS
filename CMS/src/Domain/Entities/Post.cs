@@ -1,42 +1,50 @@
-﻿namespace CMS.src.Domain.Entities
+﻿using CMS.src.Domain.Entities;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.EntityFrameworkCore;
+
+namespace CMS.Domain.Entities
 {
     public class Post
     {
         public Guid Id { get; private set; }
-
-        public string Title { get; private set; } = null!;
-        public string Content { get; private set; } = null!;
-        public string Status { get; private set; } = "DRAFT";
-
+        public Guid SiteId { get; private set; }
+        public int AuthorId { get; private set; }
+        public PostStatus Status { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
+        public User Author { get; private set; } = null!;
 
-        public Guid AuthorId { get; private set; }
+        private readonly List<PostTranslation> _translations = new();
+        public IReadOnlyCollection<PostTranslation> Translations => _translations.AsReadOnly();
 
-        private Post() { }
+        protected Post() { }
 
-        public Post(string title, string content, Guid authorId)
+        public Post(Guid siteId, int authorId)
         {
             Id = Guid.NewGuid();
-            Title = title;
-            Content = content;
+            SiteId = siteId;
             AuthorId = authorId;
+            Status = PostStatus.Draft;
             CreatedAt = DateTime.UtcNow;
         }
 
         public void Publish()
         {
-            Status = "PUBLISHED";
+            Status = PostStatus.Published;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string title, string content)
+        public void AddTranslation(PostTranslation translation)
         {
-            Title = title;
-            Content = content;
+            _translations.Add(translation);
             UpdatedAt = DateTime.UtcNow;
         }
     }
 
-
+    public enum PostStatus
+    {
+        Draft = 0,
+        Published = 1
+    }
 }
+
