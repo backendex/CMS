@@ -1,6 +1,7 @@
 ﻿using CMS.src.Application.DTOs;
 using CMS.src.Application.DTOs.Auth;
 using CMS.src.Application.Interfaces;
+using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,15 +11,15 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text;
+using static CMS.src.Application.DTOs.Auth.UserMethods;
 
 namespace CMS.src.API.Controller
 {
     [ApiController]
-    [Route("api/[controller]")] 
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-
         public AuthController(IAuthService authService)
         {
             _authService = authService;
@@ -45,6 +46,46 @@ namespace CMS.src.API.Controller
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        // UPDATE
+        [HttpPut("{id}")]
+        public async Task<ActionResult<UserResponseDto>> Update(
+        int id, [FromBody] UpdateUserDto dto)
+        {
+            var result = await _authService.UpdateAsync(id, dto);
+            return Ok(result);
+        }
+
+        //GET BY ID
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserResponseDto>> GetById(int id)
+        {
+            var result = await _authService.GetByIdAsync(id);
+            return Ok(result);
+        }
+
+        //TRAE EL LISTADO DE USUARIOS
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            try
+            {
+                var users = await _authService.GetAllUsersAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la lista", error = ex.Message });
+            }
+        }
+
+        //DELETE 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _authService.DeleteAsync(id);
+            return NoContent(); 
         }
 
         [HttpPost("login")]
@@ -95,50 +136,25 @@ namespace CMS.src.API.Controller
             return Redirect("http://localhost:5173/login?activated=true");
         }
 
-        [HttpGet("ping")]
-        public IActionResult Ping()
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
         {
-            return Ok(new { message = "API conectada correctamente" });
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            var result = await _authService.ChangePasswordAsync(
+                int.Parse(userIdClaim),
+                dto.NewPassword
+            );
+
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        [HttpGet("users")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-            try
-            {
-                var users = await _authService.GetAllUsersAsync();
-                return Ok(users); 
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error al obtener la lista", error = ex.Message });
-            }
-        }
-
-        //[Authorize]
-        [HttpPost("update-password")]
-        public async Task<IActionResult> UpdatePassword([FromBody] ChangePasswordDto request)
-        {
-            // Llamamos a tu método ChangePasswordAsync
-            var result = await _authService.ChangePasswordAsync(request.Email, request.CurrentPassword, request.NewPassword);
-
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(new { message = result.Message });
-        }
-        [HttpGet("debug-config")]
-        public IActionResult DebugConfig(IConfiguration config)
-        {
-            return Ok(new
-            {
-                Env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
-                ApiKey = config["Resend:ApiKey"],
-                From = config["Resend:FromEmail"]
-            });
-        }
 
     }
+
+
 }

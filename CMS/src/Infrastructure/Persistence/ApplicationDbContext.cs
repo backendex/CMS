@@ -13,6 +13,8 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<AccessRole> AccessRoles => Set<AccessRole>();
 
         public object PostTranslations { get; internal set; }
+        public object Sites { get; internal set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

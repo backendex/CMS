@@ -36,7 +36,11 @@ namespace CMS.src.Domain.Entities
 
         [ForeignKey("RolId")]
         public virtual AccessRole AccessRole { get; set; } = null!;
-
+        [Column("isdeleted")]
+        public bool IsDeleted { get; internal set; }
     }
+
+    
+
 }
 

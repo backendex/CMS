@@ -2,6 +2,7 @@
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
+using static CMS.src.Application.DTOs.Auth.UserMethods;
 
 namespace CMS.src.Application.Interfaces
 {
@@ -14,7 +15,11 @@ namespace CMS.src.Application.Interfaces
         Task<bool> CheckPasswordAsync(User user, string password);
         Task<bool> ConfirmAccountAsync(string token);
         Task<IEnumerable<User>> GetAllUsersAsync(); 
-        Task<AuthResult> ChangePasswordAsync(string email, string currentPassword, string newPassword);
+        Task<AuthResult> ChangePasswordAsync(int v, string newPassword);
         Task UpdateUserAsync(User user);
+        Task<UserResponseDto> UpdateAsync(int id, UpdateUserDto dto);
+        Task<UserResponseDto> GetByIdAsync(int id);
+        Task DeleteAsync(int id);
+
     }
 }

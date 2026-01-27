@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using static CMS.src.Application.DTOs.Auth.UserMethods;
 
 namespace CMS.src.Application.Services
 {
@@ -95,42 +96,103 @@ namespace CMS.src.Application.Services
             return true;
         }
 
+        // UPDATE
+        public async Task<UserResponseDto> UpdateAsync(int id, UpdateUserDto dto)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+
+            if (user == null)
+                throw new Exception("Usuario no encontrado");
+
+            user.FullName = dto.FullName;
+            user.RolId = dto.RoleId;
+
+            await _context.SaveChangesAsync();
+            return MapToDto(user);
+        }
+
+        // GET BY ID
+        public async Task<UserResponseDto> GetByIdAsync(int id)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+
+            if (user == null)
+                throw new Exception("Usuario no encontrado");
+
+            return MapToDto(user);
+        }
+
+        //DELETE
+        public async Task DeleteAsync(int id)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+
+            if (user == null)
+                throw new Exception("Usuario no encontrado");
+
+            user.IsDeleted = true;
+            await _context.SaveChangesAsync();
+        }
+        //Mapear la info
+        private static UserResponseDto MapToDto(User user)
+        {
+            return new UserResponseDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FullName = user.FullName,
+                RoleId = user.RolId
+            };
+        }
 
         private string GenerateRandomPassword()
         {
             return Guid.NewGuid().ToString("N").Substring(0, 10) + "A1!";
         }                  
-
         public async Task<LoginResult> LoginAsync(LoginDto loginDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+            var user = await _context.Users
+                .Include(u => u.AccessRole)
+                .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
-                return new LoginResult { Success = false, Message = "Credenciales inválidas" };
-
-            if (!user.IsActive) 
-                return new LoginResult { Success = false, Message = "Cuenta no confirmada" }; 
-
-            if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
-            {
-                string myJwt = GenerateToken(user);
-
-                var full_name = user.Name + " " + user.LastName;
-                var name_rol = user.AccessRole?.NameRol ?? "Sin Rol";
-
+            if (user == null)
                 return new LoginResult
                 {
-                    Success = true,
-                    Token = myJwt,
-                    MustChangePassword = user.IsTemporaryPassword,
-                    FullName = full_name, 
-                    Role = name_rol,
-                    Message = "Login OK"
+                    Success = false,
+                    Message = "Credenciales inválidas"
                 };
-            }
 
-            return new LoginResult { Success = false, Message = "Credenciales inválidas" };
+            if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+                return new LoginResult
+                {
+                    Success = false,
+                    Message = "Credenciales inválidas"
+                };
+
+            if (!user.IsActive)
+                return new LoginResult
+                {
+                    Success = false,
+                    Message = "Cuenta deshabilitada"
+                };
+
+            var token = GenerateToken(user);
+
+            return new LoginResult
+            {
+                Success = true,
+                Token = token,
+                MustChangePassword = user.MustChangePassword,
+                FullName = $"{user.Name} {user.LastName}",
+                Role = user.AccessRole?.NameRol ?? "Sin Rol",
+                Message = "Login OK"
+            };
         }
+
         public async Task<User?> FindByEmailAsync(string email)
         {
             return await _context.Users
@@ -193,7 +255,6 @@ namespace CMS.src.Application.Services
             return new AuthResponse(true, "¡Cuenta activada con éxito! Ya puedes iniciar sesión.", null);
         }
 
-        //Se implementa nuevo metodo para confirmar correo
         public async Task<bool> ConfirmAccountAsync(string token)
         {
             var user = await _context.Users
@@ -216,41 +277,37 @@ namespace CMS.src.Application.Services
             return await _context.Users
                 .OrderByDescending(u => u.Id)
                 .ToListAsync();
-        }
-
-        public async Task<AuthResult> ChangePasswordAsync(string email, string currentPassword, string newPassword)
+        }        
+        public async Task<AuthResult> ChangePasswordAsync(int userId, string newPassword)
         {
-            // 1. Buscar al usuario directamente en la tabla con LINQ
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FindAsync(userId);
 
             if (user == null)
                 return new AuthResult { Success = false, Message = "Usuario no encontrado" };
 
-            var hasher = new PasswordHasher<User>();
-            var verificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
-
-            if (verificationResult == PasswordVerificationResult.Failed)
-            {
-                return new AuthResult { Success = false, Message = "La contraseña temporal es incorrecta" };
-            }
-
-            user.PasswordHash = hasher.HashPassword(user, newPassword);
-
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
             user.IsTemporaryPassword = false;
             user.MustChangePassword = false;
+            user.IsActive = true;
 
             try
             {
-                _context.Users.Update(user);
                 await _context.SaveChangesAsync();
-
-                return new AuthResult { Success = true, Message = "Contraseña actualizada correctamente" };
+                return new AuthResult
+                {
+                    Success = true,
+                    Message = "Contraseña actualizada correctamente"
+                };
             }
             catch (Exception ex)
             {
-                return new AuthResult { Success = false, Message = "Error en base de datos: " + ex.Message };
+                return new AuthResult
+                {
+                    Success = false,
+                    Message = "Error en base de datos: " + ex.Message
+                };
             }
         }
-      
+
     }
 }
