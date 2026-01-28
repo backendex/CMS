@@ -87,6 +87,7 @@ namespace CMS.src.Application.Services
                     tempPassword,
                     confirmationLink
                 );
+                
             }
             catch (Exception ex)
             {
@@ -159,7 +160,7 @@ namespace CMS.src.Application.Services
                 .Include(u => u.AccessRole)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-            if (user == null)
+            if (user == null) 
                 return new LoginResult
                 {
                     Success = false,
@@ -218,14 +219,18 @@ namespace CMS.src.Application.Services
             var key = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+           
             var claims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ← clave
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Role, "Admin"),
                 new Claim("IsTemporary", user.IsTemporaryPassword.ToString())
-           };
+            };
+
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
@@ -237,6 +242,7 @@ namespace CMS.src.Application.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
         public async Task<AuthResponse> ActivateAccountAsync(string token)
         {
             var user = await _context.Users
@@ -289,6 +295,8 @@ namespace CMS.src.Application.Services
             user.IsTemporaryPassword = false;
             user.MustChangePassword = false;
             user.IsActive = true;
+
+            Console.WriteLine("ENTRÓ AL ENDPOINT CHANGE PASSWORD");
 
             try
             {

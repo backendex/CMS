@@ -1,8 +1,17 @@
-﻿namespace CMS.src.Application.DTOs.Auth
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CMS.src.Application.DTOs.Auth
 {
     public class ChangePasswordDto
     {
-        public string NewPassword { get; set; } = string.Empty;
+        [Required]
+        [MinLength(8)]
+        public string NewPassword { get; set; }
+
+        [Required]
+        [Compare(nameof(NewPassword))]
+        public string ConfirmPassword { get; set; }
     }
+
 
 }

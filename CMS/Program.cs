@@ -30,14 +30,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 
 
-
-
 #endregion
 
 #region JWT AUTHENTICATION
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
-var jwtKey = jwtSection["Key"]; // Acceso directo
+var jwtKey = jwtSection["Key"]; 
 var issuer = jwtSection.GetValue<string>("Issuer");
 var audience = jwtSection.GetValue<string>("Audience");
 var secret = builder.Configuration["JwtSettings:Key"]; 
@@ -50,58 +48,26 @@ if (string.IsNullOrWhiteSpace(jwtKey))
 {
     throw new Exception("JwtSettings:Key no configurado en appsettings.json");
 }
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-    options.SaveToken = true;
-
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidIssuer = issuer,
-        ValidAudience = audience,
-
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero,
-        RoleClaimType = ClaimTypes.Role
-    };
-
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine("DEBUG AUTH: Falló por: " + context.Exception.Message);
-            return Task.CompletedTask;
-        }
-    };
-});
-
-
 #endregion
 
 #region AUTHORIZATION / POLICIES
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireRole("Admin"));
-
-    options.AddPolicy("CanPublish", policy =>
-        policy.RequireRole("Admin", "Editor"));
-
-    options.AddPolicy("CanWrite", policy =>
-        policy.RequireRole("Admin", "Editor", "Author"));
-});
-
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])
+            ),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 #endregion
 
 #region CORS

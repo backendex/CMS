@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using static CMS.src.Application.DTOs.Auth.UserMethods;
@@ -24,8 +25,7 @@ namespace CMS.src.API.Controller
         {
             _authService = authService;
         }
-        //Aqui una llave de admin
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -49,23 +49,22 @@ namespace CMS.src.API.Controller
         }
 
         // UPDATE
-        [HttpPut("{id}")]
-        public async Task<ActionResult<UserResponseDto>> Update(
-        int id, [FromBody] UpdateUserDto dto)
-        {
-            var result = await _authService.UpdateAsync(id, dto);
-            return Ok(result);
-        }
+        //[HttpPut("{id}")]
+        //public async Task<ActionResult<UserResponseDto>> Update(
+        //int id, [FromBody] UpdateUserDto dto)
+        //{
+        //    var result = await _authService.UpdateAsync(id, dto);
+        //    return Ok(result);
+        //}
 
-        //GET BY ID
-        [HttpGet("{id}")]
-        public async Task<ActionResult<UserResponseDto>> GetById(int id)
-        {
-            var result = await _authService.GetByIdAsync(id);
-            return Ok(result);
-        }
+        ////GET BY ID
+        //[HttpGet("{id}")]
+        //public async Task<ActionResult<UserResponseDto>> GetById(int id)
+        //{
+        //    var result = await _authService.GetByIdAsync(id);
+        //    return Ok(result);
+        //}
 
-        //TRAE EL LISTADO DE USUARIOS
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -80,14 +79,15 @@ namespace CMS.src.API.Controller
             }
         }
 
-        //DELETE 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _authService.DeleteAsync(id);
-            return NoContent(); 
-        }
+        ////DELETE 
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> Delete(int id)
+        //{
+        //    await _authService.DeleteAsync(id);
+        //    return NoContent(); 
+        //}
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
@@ -121,7 +121,6 @@ namespace CMS.src.API.Controller
             return Ok(result);
         }
 
-        //Nuevo controlador para pedir token
         [HttpGet("confirm-account")]
         public async Task<IActionResult> ConfirmAccount([FromQuery] string token)
         {
@@ -138,22 +137,24 @@ namespace CMS.src.API.Controller
 
         [Authorize]
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userIdClaim == null)
-                return Unauthorized();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized("Token inválido");
 
             var result = await _authService.ChangePasswordAsync(
-                int.Parse(userIdClaim),
-                dto.NewPassword
+                   int.Parse(userIdClaim),
+                   dto.NewPassword
             );
 
             return result.Success ? Ok(result) : BadRequest(result);
         }
-
-
     }
 
 
