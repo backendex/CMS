@@ -29,7 +29,6 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 
-
 #endregion
 
 #region JWT AUTHENTICATION

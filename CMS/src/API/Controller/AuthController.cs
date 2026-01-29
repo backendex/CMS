@@ -25,7 +25,7 @@ namespace CMS.src.API.Controller
         {
             _authService = authService;
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -155,7 +155,10 @@ namespace CMS.src.API.Controller
 
             return result.Success ? Ok(result) : BadRequest(result);
         }
+
+
     }
+
 
 
 }
