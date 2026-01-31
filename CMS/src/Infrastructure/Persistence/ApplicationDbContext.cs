@@ -1,4 +1,5 @@
-﻿using CMS.src.Application.Interfaces;
+﻿using CMS.src.Application.DTOs.Content;
+using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,8 @@ namespace CMS.Infrastructure.Persistence
 
         public object PostTranslations { get; internal set; }
         public object Sites { get; internal set; }
+        public DbSet<SiteContent> SiteContents { get; set; }
+        public DbSet<Tour> Tours { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -42,6 +45,16 @@ namespace CMS.Infrastructure.Persistence
                 entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
             });
 
+        }
+
+        internal async Task<int> SaveChangeAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        internal async Task<int> saveChangeAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

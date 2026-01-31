@@ -28,6 +28,7 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
 // Inyección de tus servicios personalizados
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
+builder.Services.AddScoped<IContentService, ContentService>();
 
 #endregion
 
