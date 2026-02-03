@@ -38,6 +38,7 @@ namespace CMS.src.Domain.Entities
         public virtual AccessRole AccessRole { get; set; } = null!;
         [Column("isdeleted")]
         public bool IsDeleted { get; internal set; }
+        public virtual ICollection<UserSite> UserSites { get; set; }
     }
 
     

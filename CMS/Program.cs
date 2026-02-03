@@ -29,6 +29,7 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<ISiteService, SiteService>();
 
 #endregion
 

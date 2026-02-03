@@ -3,6 +3,7 @@ using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace CMS.Infrastructure.Persistence
 {
@@ -22,18 +23,20 @@ namespace CMS.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
             // Configuración de la relación entre User y AccessRole
-            modelBuilder.Entity<User>(entity => {
+            modelBuilder.Entity<User>(entity =>
+            {
                 entity.HasOne(d => d.AccessRole)
                       .WithMany(p => p.Users)
                       .HasForeignKey(d => d.RolId)
-                      .HasConstraintName("fk_user_role"); 
-                entity.ToTable("users"); 
+                      .HasConstraintName("fk_user_role");
+                entity.ToTable("users");
                 entity.Property(e => e.RolId).HasColumnName("rol_id");
                 // MAPEO DE LOS NUEVOS CAMPOS (Obligatorio para Postgres)
                 entity.Property(e => e.IsActive).HasColumnName("is_active");
                 entity.Property(e => e.ValidationToken).HasColumnName("validation_token");
             });
-            modelBuilder.Entity<AccessRole>(entity => {
+            modelBuilder.Entity<AccessRole>(entity =>
+            {
                 entity.ToTable("access_role");
                 entity.Property(e => e.NameRol).HasColumnName("name_rol");
                 entity.Property(e => e.CanView).HasColumnName("can_view");
@@ -41,11 +44,40 @@ namespace CMS.Infrastructure.Persistence
                 entity.Property(e => e.CanEdit).HasColumnName("can_edit");
                 entity.Property(e => e.CanDelete).HasColumnName("can_delete");
             });
-            modelBuilder.Entity<User>(entity => {
+            modelBuilder.Entity<User>(entity =>
+            {
                 entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
             });
 
+            modelBuilder.Entity<UserSite>(entity =>
+            {
+                // 1. Definir la Llave Primaria Compuesta
+                entity.HasKey(us => new { us.UserId, us.SiteId });
+
+                // 2. Mapeo de columnas EXACTO para Postgres (Esto quita el error 42703)
+                entity.Property(us => us.UserId)
+                      .HasColumnName("user_id"); // O "user_id" según tu DB
+
+                entity.Property(us => us.SiteId)
+                      .HasColumnName("site_id"); // O "site_id" según tu DB
+
+                // 3. Relación con Usuario
+                entity.HasOne(us => us.User)
+                      .WithMany(u => u.UserSites)
+                      .HasForeignKey(us => us.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // 4. Relación con Sitio
+                entity.HasOne(us => us.Site)
+                      .WithMany()
+                      .HasForeignKey(us => us.SiteId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable("user_sites");
+            });
+
         }
+
 
         internal async Task<int> SaveChangeAsync()
         {

@@ -271,7 +271,7 @@ namespace CMS.src.Application.Services
 
             user.IsActive = true;
             user.ValidationToken = null;
-            user.MustChangePassword = false;
+            user.MustChangePassword = true;
 
             await _context.SaveChangesAsync();
 

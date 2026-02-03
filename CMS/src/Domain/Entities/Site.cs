@@ -1,31 +1,22 @@
-﻿namespace CMS.src.Domain.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace CMS.src.Domain.Entities
 {
+    [Table("sites")]
     public class Site
     {
+        [Column("id")]
         public Guid Id { get; private set; }
+        [Column("name")]
         public string Name { get; private set; } = null!;
+        [Column("domain")]
         public string Domain { get; private set; } = null!;
-        public string City { get; private set; } = null!;
-        public string Country { get; private set; } = null!;
-        public string DefaultLanguage { get; private set; } = "es";
+        [Column("is_active")]
         public bool IsActive { get; private set; }
 
-
-        protected Site() { }
-
-
-        public Site(string name, string domain, string city, string country)
-        {
-            Id = Guid.NewGuid();
-            Name = name;
-            Domain = domain;
-            City = city;
-            Country = country;
-            IsActive = true;
-        }
+        [Column("created_at")]
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
 
-        public void Disable() => IsActive = false;
-        public void Enable() => IsActive = true;
     }
 }

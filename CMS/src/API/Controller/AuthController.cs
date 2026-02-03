@@ -25,7 +25,7 @@ namespace CMS.src.API.Controller
         {
             _authService = authService;
         }
-        [Authorize(Roles = "Administrador")]
+        //[Authorize(Roles = "Administrador")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -48,23 +48,6 @@ namespace CMS.src.API.Controller
             }
         }
 
-        // UPDATE
-        //[HttpPut("{id}")]
-        //public async Task<ActionResult<UserResponseDto>> Update(
-        //int id, [FromBody] UpdateUserDto dto)
-        //{
-        //    var result = await _authService.UpdateAsync(id, dto);
-        //    return Ok(result);
-        //}
-
-        ////GET BY ID
-        //[HttpGet("{id}")]
-        //public async Task<ActionResult<UserResponseDto>> GetById(int id)
-        //{
-        //    var result = await _authService.GetByIdAsync(id);
-        //    return Ok(result);
-        //}
-
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -78,14 +61,6 @@ namespace CMS.src.API.Controller
                 return StatusCode(500, new { message = "Error al obtener la lista", error = ex.Message });
             }
         }
-
-        ////DELETE 
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> Delete(int id)
-        //{
-        //    await _authService.DeleteAsync(id);
-        //    return NoContent(); 
-        //}
 
         [AllowAnonymous]
         [HttpPost("login")]
@@ -135,8 +110,8 @@ namespace CMS.src.API.Controller
             return Redirect("http://localhost:5173/login?activated=true");
         }
 
-        [Authorize]
-        [HttpPost("change-password")]
+        //[Authorize]
+        [HttpPost("changePass")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {
 
@@ -158,7 +133,5 @@ namespace CMS.src.API.Controller
 
 
     }
-
-
 
 }
