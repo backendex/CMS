@@ -138,7 +138,6 @@ namespace CMS.src.Application.Services
             user.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
-        //Mapear la info
         private static UserResponseDto MapToDto(User user)
         {
             return new UserResponseDto
@@ -149,7 +148,6 @@ namespace CMS.src.Application.Services
                 RoleId = user.RolId
             };
         }
-
         private string GenerateRandomPassword()
         {
             return Guid.NewGuid().ToString("N").Substring(0, 10) + "A1!";
@@ -187,6 +185,7 @@ namespace CMS.src.Application.Services
             {
                 Success = true,
                 Token = token,
+                UserId = user.Id,
                 MustChangePassword = user.MustChangePassword,
                 FullName = $"{user.Name} {user.LastName}",
                 Role = user.AccessRole?.NameRol ?? "Sin Rol",

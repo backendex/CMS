@@ -30,7 +30,6 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ISiteService, SiteService>();
-
 #endregion
 
 #region JWT AUTHENTICATION
@@ -120,7 +119,7 @@ builder.Services.AddSwaggerGen(c =>
 #endregion
 
 var app = builder.Build();
-
+app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 #region MIDDLEWARE PIPELINE
 
 if (app.Environment.IsDevelopment())

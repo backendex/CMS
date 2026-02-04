@@ -9,8 +9,7 @@ namespace CMS.src.Domain.Entities
         public int UserId { get; set; }
         [Column("site_id")]
         public Guid? SiteId { get; set; }
-
         public virtual User User { get; set; }
-        public virtual Site Site { get; set; }
+        public virtual Site SiteNavigate { get; set; }
     }
 }

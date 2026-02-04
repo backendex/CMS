@@ -25,7 +25,7 @@ namespace CMS.src.API.Controller
         {
             _authService = authService;
         }
-        //[Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -110,7 +110,7 @@ namespace CMS.src.API.Controller
             return Redirect("http://localhost:5173/login?activated=true");
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost("changePass")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {

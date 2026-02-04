@@ -31,7 +31,6 @@ namespace CMS.Infrastructure.Persistence
                       .HasConstraintName("fk_user_role");
                 entity.ToTable("users");
                 entity.Property(e => e.RolId).HasColumnName("rol_id");
-                // MAPEO DE LOS NUEVOS CAMPOS (Obligatorio para Postgres)
                 entity.Property(e => e.IsActive).HasColumnName("is_active");
                 entity.Property(e => e.ValidationToken).HasColumnName("validation_token");
             });
@@ -68,7 +67,7 @@ namespace CMS.Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Cascade);
 
                 // 4. Relación con Sitio
-                entity.HasOne(us => us.Site)
+                entity.HasOne(us => us.SiteNavigate)
                       .WithMany()
                       .HasForeignKey(us => us.SiteId)
                       .OnDelete(DeleteBehavior.Cascade);

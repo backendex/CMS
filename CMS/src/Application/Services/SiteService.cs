@@ -26,7 +26,7 @@ namespace CMS.src.Application.Services
         {
             var user = await _context.Users
                 .Include(u => u.UserSites)
-                .ThenInclude(us => us.Site)
+                .ThenInclude(us => us.SiteNavigate)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null) return null;
@@ -37,11 +37,11 @@ namespace CMS.src.Application.Services
                 FullName = user.FullName,
                 AllowedSites = user.UserSites.Select(us => new SiteDto
                 {
-                    Id = us.Site.Id,
-                    Name = us.Site.Name,
-                    Domain = us.Site.Domain,
-                    IsActive = us.Site.IsActive,
-                    CreatedAt = us.Site.CreatedAt
+                    Id = us.SiteNavigate.Id,
+                    Name = us.SiteNavigate.Name,
+                    Domain = us.SiteNavigate.Domain,
+                    IsActive = us.SiteNavigate.IsActive,
+                    CreatedAt = us.SiteNavigate.CreatedAt
                 }).ToList()
             };
         }
