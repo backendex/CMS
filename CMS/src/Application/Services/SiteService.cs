@@ -40,11 +40,14 @@ namespace CMS.src.Application.Services
                     Id = us.SiteNavigate.Id,
                     Name = us.SiteNavigate.Name,
                     Domain = us.SiteNavigate.Domain,
+                    Url = us.SiteNavigate.Url,
+                    Color = us.SiteNavigate.Color,
+                    IsMaintenance = us.SiteNavigate.IsMaintenance,
                     IsActive = us.SiteNavigate.IsActive,
                     CreatedAt = us.SiteNavigate.CreatedAt
                 }).ToList()
             };
-        }
+    }
     }
 
 

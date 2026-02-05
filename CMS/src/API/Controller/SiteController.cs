@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
+using System.Security.Claims;
 
 namespace CMS.src.API.Controller
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/site")]
     public class SiteController : ControllerBase
     {
         private readonly ISiteService _siteService;
@@ -21,10 +22,17 @@ namespace CMS.src.API.Controller
             _context = context;
         }
 
-        [AllowAnonymous]
-        [HttpGet("getUserAccess/{userId}")]
-        public async Task<IActionResult> GetUserAccess(int userId)
+        [Authorize]
+        [HttpGet("user-access")]
+        public async Task<IActionResult> GetUserAccess()
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim);
+
             var response = await _siteService.GetUserAccessAsync(userId);
 
             if (response == null)
@@ -32,5 +40,6 @@ namespace CMS.src.API.Controller
 
             return Ok(response);
         }
+
     }
 }

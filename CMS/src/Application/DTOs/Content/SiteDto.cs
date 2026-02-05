@@ -7,8 +7,7 @@
         public string Domain { get; set; }
         public string Url { get; set; }
         public string Color { get; set; }
-        public int TousrsCount { get; set; }
-        public string Status { get; set; }
+        public bool IsMaintenance { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
