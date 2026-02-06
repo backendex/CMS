@@ -33,7 +33,6 @@ namespace CMS.src.Application.Services
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
-
         public async Task<bool> RegisterByAdminAsync(RegisterDto registerDto)
         {
             var customRole = await _context.AccessRoles
@@ -97,7 +96,6 @@ namespace CMS.src.Application.Services
             return true;
         }
 
-        // UPDATE
         public async Task<UserResponseDto> UpdateAsync(int id, UpdateUserDto dto)
         {
             var user = await _context.Users
@@ -113,7 +111,6 @@ namespace CMS.src.Application.Services
             return MapToDto(user);
         }
 
-        // GET BY ID
         public async Task<UserResponseDto> GetByIdAsync(int id)
         {
             var user = await _context.Users
@@ -126,7 +123,6 @@ namespace CMS.src.Application.Services
             return MapToDto(user);
         }
 
-        //DELETE
         public async Task DeleteAsync(int id)
         {
             var user = await _context.Users
@@ -182,7 +178,7 @@ namespace CMS.src.Application.Services
             var token = GenerateToken(user);
 
             return new LoginResult
-            {
+            { 
                 Success = true,
                 Token = token,
                 UserId = user.Id,
@@ -221,7 +217,7 @@ namespace CMS.src.Application.Services
            
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ← clave
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), 
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
 
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),

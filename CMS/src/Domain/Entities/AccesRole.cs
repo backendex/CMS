@@ -18,5 +18,7 @@ namespace CMS.src.Domain.Entities
         [Column("can_delete")]
         public bool CanDelete { get; set; }
         public ICollection<User> Users { get; set; } = new List<User>();
+        public ICollection<RolePermissions> RolePermissions { get; set; }
+
     }
 }

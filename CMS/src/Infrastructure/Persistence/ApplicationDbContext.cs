@@ -4,6 +4,7 @@ using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
+using System.Security;
 
 namespace CMS.Infrastructure.Persistence
 {
@@ -18,6 +19,7 @@ namespace CMS.Infrastructure.Persistence
         public object Sites { get; internal set; }
         public DbSet<SiteContent> SiteContents { get; set; }
         public DbSet<Tour> Tours { get; set; }
+        public DbSet<RolePermissions> RolePermissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -75,8 +77,30 @@ namespace CMS.Infrastructure.Persistence
                 entity.ToTable("user_sites");
             });
 
-        }
+            modelBuilder.Entity<RolePermissions>(entity =>
+            {
+                // PK compuesta
+                entity.HasKey(rp => new { rp.RoleId, rp.PermissionId });
 
+                // Relaciones definidas arriba con HasMany/WithOne
+            });
+
+            modelBuilder.Entity<Permissions>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.PermissionKey)
+                      .IsRequired()
+                      .HasMaxLength(100);
+                entity.Property(p => p.Description)
+                      .HasMaxLength(250);
+
+                // Relación muchos a muchos con Role a través de RolePermission
+                entity.HasMany(p => p.RolePermissions)
+                      .WithOne(rp => rp.Permissions)
+                      .HasForeignKey(rp => rp.PermissionId);
+            });
+
+        }
 
         internal async Task<int> SaveChangeAsync()
         {

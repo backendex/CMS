@@ -17,7 +17,7 @@ using static CMS.src.Application.DTOs.Auth.UserMethods;
 namespace CMS.src.API.Controller
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -25,6 +25,7 @@ namespace CMS.src.API.Controller
         {
             _authService = authService;
         }
+
         [Authorize(Roles = "Administrador")]
         [HttpPost("admin/create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
@@ -48,6 +49,7 @@ namespace CMS.src.API.Controller
             }
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
         {
