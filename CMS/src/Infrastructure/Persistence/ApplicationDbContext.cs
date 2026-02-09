@@ -20,6 +20,7 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<SiteContent> SiteContents { get; set; }
         public DbSet<Tour> Tours { get; set; }
         public DbSet<RolePermissions> RolePermissions { get; set; }
+        public DbSet<MediaContent> Media { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

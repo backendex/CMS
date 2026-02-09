@@ -48,5 +48,23 @@ namespace CMS.src.Application.Services
 
             return await _context.SaveChangesAsync() > 0;
         }
+        public async Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId)
+        {
+            return await _context.Media
+                .Where(m => m.SiteId == siteId)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<MediaContent> SaveMediaAsync(MediaContent media)
+        {
+            media.Id = Guid.NewGuid();
+            media.CreatedAt = DateTime.UtcNow;
+            _context.Media.Add(media);
+            await _context.SaveChangesAsync();
+            return media;
+        }
     }
 }
+
+    

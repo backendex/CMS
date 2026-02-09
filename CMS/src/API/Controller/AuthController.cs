@@ -50,7 +50,7 @@ namespace CMS.src.API.Controller
         }
 
         [Authorize(Roles = "Administrador")]
-        [HttpGet("users")]
+        [HttpGet("/users")]
         public async Task<IActionResult> GetAllUsers()
         {
             try

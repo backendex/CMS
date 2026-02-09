@@ -8,5 +8,7 @@ namespace CMS.src.Application.Interfaces
     {
         Task<bool> UpdateBulkContentAsync(List<ContentUpdateDto> contentUpdate);
         Task<List<SiteContent>> GetContentBySiteIdAsync(Guid siteId);
+        Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId);
+        Task<MediaContent> SaveMediaAsync(MediaContent media);
     }
 }
