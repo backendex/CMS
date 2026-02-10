@@ -19,13 +19,16 @@ namespace CMS.src.Application.Services
         {
             return await _context.Tours
                 .Where(t => t.SiteId == siteId)
+                // Ordenamos por Id o por una fecha de creación para que el más nuevo esté arriba
+                .OrderByDescending(t => t.Id)
                 .ToListAsync();
         }
+
         public async Task<Tour?> GetTourByIdAsync(Guid Id)
         {
-            return await _context.Tours
-                .FindAsync(Id);
+            return await _context.Tours.FindAsync(Id);
         }
+
         public async Task<Tour> CreateTourAsync(TourDto tourDto)
         {
             var tour = new Tour
@@ -42,10 +45,12 @@ namespace CMS.src.Application.Services
             };
 
             _context.Tours.Add(tour);
+            // Corregido: SaveChangesAsync
             await _context.SaveChangesAsync();
             return tour;
         }
-        public async Task<bool> UpdateTourAsync(Guid id,TourDto tourDto)
+
+        public async Task<bool> UpdateTourAsync(Guid id, TourDto tourDto)
         {
             var tour = await _context.Tours.FindAsync(id);
             if (tour == null) return false;
@@ -59,15 +64,18 @@ namespace CMS.src.Application.Services
             tour.SeoDescription = tourDto.SeoDescription;
             tour.Slug = tourDto.Slug;
 
-            return await _context.SaveChangeAsync() > 0;
+            // Corregido: SaveChangesAsync
+            return await _context.SaveChangesAsync() > 0;
         }
-        public async Task<bool>DeleteTourAsync(Guid id)
+
+        public async Task<bool> DeleteTourAsync(Guid id)
         {
             var tour = await _context.Tours.FindAsync(id);
             if (tour == null) return false;
 
             _context.Tours.Remove(tour);
-            return await _context.saveChangeAsync() > 0;
+            // Corregido: SaveChangesAsync
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

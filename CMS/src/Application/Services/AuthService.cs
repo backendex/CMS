@@ -222,7 +222,7 @@ namespace CMS.src.Application.Services
 
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(ClaimTypes.Role, "Administrador"),
                 new Claim("IsTemporary", user.IsTemporaryPassword.ToString())
             };
 

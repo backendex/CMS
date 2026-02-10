@@ -31,6 +31,8 @@ namespace CMS.src.API.Controller
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] TourDto dto)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             var newTour = await _tourService.CreateTourAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = newTour.Id }, newTour);
         }
