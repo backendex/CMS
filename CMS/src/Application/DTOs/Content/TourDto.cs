@@ -12,5 +12,8 @@
         public string SeoTitle { get; set; }
         public string SeoDescription { get; set; }
         public string Slug { get; set; }
+        public Dictionary<string, object> DynamicData { get; set; } = new(); 
+
+
     }
 }

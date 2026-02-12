@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CMS.src.API.Controller
 {
+    [ApiController]
+    [Route("api/tour")]
     public class TourController : ControllerBase
     {
         private readonly ITourService _tourService;
@@ -13,28 +15,48 @@ namespace CMS.src.API.Controller
             _tourService = tourService;
         }
 
-        [HttpGet("site/{siteId}")]
+        [HttpGet("{siteId}/getTour")]
         public async Task<IActionResult> GetTours(Guid siteId)
         {
             var tours = await _tourService.GetToursBySiteIdAsync(siteId);
             return Ok(tours);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{siteId}/getTourById")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var tour = await _tourService.GetTourByIdAsync(id);
-            if (tour == null) return NotFound();
-            return Ok(tour);
+            return tour == null ? NotFound() : Ok(tour);
         }
 
-        [HttpPost]
+        [HttpPost("/createTour")]
         public async Task<IActionResult> Create([FromBody] TourDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var newTour = await _tourService.CreateTourAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = newTour.Id }, newTour);
+            try
+            {
+
+                if (dto.SiteId == Guid.Empty)
+                    return BadRequest("El siteId es obligatorio para vincular el tour a un sitio.");
+
+                var newTour = await _tourService.CreateTourAsync(dto);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Tour añadido exitosamente",
+                    data = newTour
+                });
+            }
+            catch (Exception ex)
+            {
+                string friendlyMessage = ex.Message.Contains("23505")
+            ? "El 'slug' ya está en uso. Por favor, elige otro nombre o slug."
+            : "Error al guardar el tour. Verifica que el SiteId sea correcto.";
+
+                return BadRequest(new { success = false, message = friendlyMessage, details = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]

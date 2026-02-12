@@ -2,7 +2,9 @@
 using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CMS.src.Application.Services
 {
@@ -15,13 +17,20 @@ namespace CMS.src.Application.Services
             _context = context;
         }
 
+        [HttpGet("site/{siteId}")]
         public async Task<List<Tour>> GetToursBySiteIdAsync(Guid siteId)
         {
-            return await _context.Tours
+            var tour = await _context.Tours
                 .Where(t => t.SiteId == siteId)
-                // Ordenamos por Id o por una fecha de creación para que el más nuevo esté arriba
                 .OrderByDescending(t => t.Id)
                 .ToListAsync();
+
+            return Ok(tour);
+
+        }
+        private List<Tour> Ok(List<Tour> tour)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<Tour?> GetTourByIdAsync(Guid Id)
@@ -31,6 +40,7 @@ namespace CMS.src.Application.Services
 
         public async Task<Tour> CreateTourAsync(TourDto tourDto)
         {
+
             var tour = new Tour
             {
                 SiteId = tourDto.SiteId,
@@ -41,12 +51,22 @@ namespace CMS.src.Application.Services
                 IsActive = tourDto.IsActive,
                 SeoTitle = tourDto.SeoTitle,
                 SeoDescription = tourDto.SeoDescription,
-                Slug = tourDto.Slug
+                Slug = tourDto.Slug,               
+
             };
 
+            tour.DynamicData = JsonDocument.Parse(JsonSerializer.Serialize(tourDto.DynamicData ?? new Dictionary<string, object>()));
+
             _context.Tours.Add(tour);
-            // Corregido: SaveChangesAsync
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                var message = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception($"Error de base de datos: {message}");
+            }
             return tour;
         }
 
@@ -64,7 +84,6 @@ namespace CMS.src.Application.Services
             tour.SeoDescription = tourDto.SeoDescription;
             tour.Slug = tourDto.Slug;
 
-            // Corregido: SaveChangesAsync
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -74,7 +93,6 @@ namespace CMS.src.Application.Services
             if (tour == null) return false;
 
             _context.Tours.Remove(tour);
-            // Corregido: SaveChangesAsync
             return await _context.SaveChangesAsync() > 0;
         }
     }

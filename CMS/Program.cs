@@ -31,6 +31,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ISiteService, SiteService>();
+builder.Services.AddScoped<ITourService, TourService>();
 #endregion
 
 #region JWT AUTHENTICATION
@@ -72,13 +73,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 #endregion
 
 #region CORS
-
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins("http://localhost:5173", "http://localhost:4321/")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

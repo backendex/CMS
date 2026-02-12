@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Metadata;
+using System.Text.Json;
 
 namespace CMS.src.Domain.Entities
 {
     [Table("tour")] 
-    public class Tour
+    public class Tour : BaseDynamic
     {
         [Key]
         [Column("id")]
@@ -38,6 +40,10 @@ namespace CMS.src.Domain.Entities
         public string SeoDescription { get; set; } = string.Empty;
 
         [Column("slug")]
-        public string Slug { get; set; } = string.Empty; 
+        public string Slug { get; set; } = string.Empty;
+
+        //column jsonb
+        [Column("dynamic_data", TypeName = "jsonb")]
+        public JsonDocument DynamicData { get; set; }
     }
 }
