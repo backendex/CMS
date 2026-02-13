@@ -15,18 +15,39 @@ namespace CMS.src.API.Controller
             _tourService = tourService;
         }
 
-        [HttpGet("{siteId}/getTour")]
-        public async Task<IActionResult> GetTours(Guid siteId)
+        [HttpGet("/getTour")]
+        public async Task<IActionResult> GetTours([FromQuery] Guid siteId)
         {
-            var tours = await _tourService.GetToursBySiteIdAsync(siteId);
-            return Ok(tours);
+            try
+            {
+                if (siteId == Guid.Empty) return BadRequest("SiteId es requerido.");
+                var tours = await _tourService.GetTourAsync(siteId);
+                return Ok(tours);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la lista", error = ex.Message });
+            }
+
         }
 
-        [HttpGet("{siteId}/getTourById")]
-        public async Task<IActionResult> GetById(Guid id)
+        [HttpGet("/getTourById")]
+        public async Task<IActionResult> GetById(Guid id, Guid siteId)
         {
-            var tour = await _tourService.GetTourByIdAsync(id);
-            return tour == null ? NotFound() : Ok(tour);
+            try
+            {
+                var tour = await _tourService.GetTourByIdAsync(id, siteId);
+                if (tour == null || tour.SiteId != siteId)
+                {
+                    return NotFound(new { message = "Tour no encontrado para el SiteId proporcionado" });
+                }
+                return Ok(tour);
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener el tour", error = ex.Message });
+            }
         }
 
         [HttpPost("/createTour")]

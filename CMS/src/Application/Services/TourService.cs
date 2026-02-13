@@ -16,26 +16,17 @@ namespace CMS.src.Application.Services
         {
             _context = context;
         }
-
-        [HttpGet("site/{siteId}")]
-        public async Task<List<Tour>> GetToursBySiteIdAsync(Guid siteId)
+        public async Task<IEnumerable<Tour>> GetTourAsync(Guid siteId)
         {
-            var tour = await _context.Tours
+            return await _context.Tours
                 .Where(t => t.SiteId == siteId)
-                .OrderByDescending(t => t.Id)
                 .ToListAsync();
-
-            return Ok(tour);
-
-        }
-        private List<Tour> Ok(List<Tour> tour)
-        {
-            throw new NotImplementedException();
         }
 
-        public async Task<Tour?> GetTourByIdAsync(Guid Id)
+        public async Task<Tour?> GetTourByIdAsync(Guid id, Guid siteId)
         {
-            return await _context.Tours.FindAsync(Id);
+            return await _context.Tours
+                .FirstOrDefaultAsync(t => t.Id == id && t.SiteId == siteId);
         }
 
         public async Task<Tour> CreateTourAsync(TourDto tourDto)
@@ -52,7 +43,6 @@ namespace CMS.src.Application.Services
                 SeoTitle = tourDto.SeoTitle,
                 SeoDescription = tourDto.SeoDescription,
                 Slug = tourDto.Slug,               
-
             };
 
             tour.DynamicData = JsonDocument.Parse(JsonSerializer.Serialize(tourDto.DynamicData ?? new Dictionary<string, object>()));
