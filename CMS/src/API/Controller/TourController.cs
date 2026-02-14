@@ -15,12 +15,11 @@ namespace CMS.src.API.Controller
             _tourService = tourService;
         }
 
-        [HttpGet("/getTour")]
+        [HttpGet("getTour")]
         public async Task<IActionResult> GetTours([FromQuery] Guid siteId)
         {
             try
             {
-                if (siteId == Guid.Empty) return BadRequest("SiteId es requerido.");
                 var tours = await _tourService.GetTourAsync(siteId);
                 return Ok(tours);
             }
