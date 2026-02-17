@@ -64,6 +64,49 @@ namespace CMS.src.Application.Services
             await _context.SaveChangesAsync();
             return media;
         }
+        public async Task<Guid> CreatePostAsync(BlogPost blogDto) 
+        {
+            if (await ExistsBySlugAsync(blogDto.Slug, blogDto.SiteId))
+            {
+                throw new Exception("El slug ya existe para este sitio.");
+            }
+
+            if (blogDto.Id == Guid.Empty)
+            {
+                blogDto.Id = Guid.NewGuid();
+            }
+
+            _context.BlogPost.Add(blogDto);
+            await _context.SaveChangesAsync();
+
+            return blogDto.Id;
+        }
+
+        public async Task<bool> ExistsBySlugAsync(string slug, Guid siteId)
+        {
+            return await _context.BlogPost
+                .AnyAsync(b => b.Slug == slug && b.SiteId == siteId);
+        }
+
+        public async Task<List<BlogPost>> GetPostsAsync(string? siteId = null)
+        {
+            var query = _context.BlogPost.AsQueryable();
+
+            if (!string.IsNullOrEmpty(siteId))
+            {
+                if (Guid.TryParse(siteId, out Guid siteGuid))
+                {
+                    query = query.Where(b => b.SiteId == siteGuid);
+                }
+                else
+                {
+                    return new List<BlogPost>();
+                }
+            }
+
+            return await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
+        }
+
     }
 }
 

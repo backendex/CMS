@@ -16,5 +16,4 @@ namespace CMS.src.Application.DTOs.Auth
         public string Role { get; set; }
     }
 
-
 }

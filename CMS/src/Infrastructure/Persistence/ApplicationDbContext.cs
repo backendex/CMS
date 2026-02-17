@@ -21,6 +21,7 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<Tour> Tours { get; set; }
         public DbSet<RolePermissions> RolePermissions { get; set; }
         public DbSet<MediaContent> Media { get; set; }
+        public DbSet<BlogPost> BlogPost { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -80,10 +81,8 @@ namespace CMS.Infrastructure.Persistence
 
             modelBuilder.Entity<RolePermissions>(entity =>
             {
-                // PK compuesta
-                entity.HasKey(rp => new { rp.RoleId, rp.PermissionId });
 
-                // Relaciones definidas arriba con HasMany/WithOne
+                entity.HasKey(rp => new { rp.RoleId, rp.PermissionId });
             });
 
             modelBuilder.Entity<Permissions>(entity =>
@@ -94,23 +93,32 @@ namespace CMS.Infrastructure.Persistence
                       .HasMaxLength(100);
                 entity.Property(p => p.Description)
                       .HasMaxLength(250);
-
-                // Relación muchos a muchos con Role a través de RolePermission
                 entity.HasMany(p => p.RolePermissions)
                       .WithOne(rp => rp.Permissions)
                       .HasForeignKey(rp => rp.PermissionId);
             });
+            modelBuilder.Entity<BlogPost>(entity =>
+            {
+                entity.ToTable("blog_post");
 
-        }
-
-        internal async Task<int> SaveChangeAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        internal async Task<int> saveChangeAsync()
-        {
-            throw new NotImplementedException();
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Title).HasColumnName("title");
+                entity.Property(e => e.Slug).HasColumnName("slug");
+                entity.Property(e => e.Content).HasColumnName("content");
+                entity.Property(e => e.FeaturedImage).HasColumnName("featured_image");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+                entity.Property(e => e.IsPublished).HasColumnName("is_published");
+                entity.Property(e => e.SiteId).HasColumnName("site_id");
+                entity.Property(e => e.SeoData)
+                  .HasColumnName("seo_data")
+                  .HasColumnType("jsonb")
+                  .HasConversion(
+                      v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+                      v => System.Text.Json.JsonSerializer.Deserialize<SeoMetadata>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new SeoMetadata()
+                  );
+            });
         }
     }
 }

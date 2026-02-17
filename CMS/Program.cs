@@ -32,6 +32,7 @@ builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ISiteService, SiteService>();
 builder.Services.AddScoped<ITourService, TourService>();
+builder.Services.AddScoped<IContentService, ContentService>();
 #endregion
 
 #region JWT AUTHENTICATION
@@ -94,7 +95,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CMS API", Version = "v1" });
-
+    c.CustomSchemaIds(type => type.FullName);
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -104,7 +105,6 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Introduce: Bearer {tu_token}"
     });
-
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

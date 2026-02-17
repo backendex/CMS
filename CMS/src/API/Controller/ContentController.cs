@@ -50,12 +50,41 @@ namespace CMS.src.API.Controller
             return Ok(results);
         }
 
-        [HttpPost]
+        [HttpPost("createMedia")]
         public async Task<IActionResult> Create([FromBody] MediaContent media)
         {
             var createdMedia = await _contentService.SaveMediaAsync(media);
             return Ok(createdMedia);
         }
+        [HttpPost("createPost")]
+        public async Task<IActionResult> CreatePost([FromBody] BlogPost postDto)
+        {
+            if (postDto == null) return BadRequest(new { message = "Los datos del post son requeridos." });
 
+            try
+            {
+                var id = await _contentService.CreatePostAsync(postDto);
+                return Ok(new { message = "Post guardado con éxito", id });
+            }
+            catch (Exception ex)
+            {
+                var errorDetail = ex.InnerException?.Message ?? ex.Message;
+                return BadRequest(new { message = errorDetail });
+            }
+        }
+
+        [HttpGet("getPosts")]
+        public async Task<ActionResult<List<BlogPost>>> GetPosts([FromQuery] string? siteId)
+        {
+            try
+            {
+                var posts = await _contentService.GetPostsAsync(siteId);
+                return Ok(posts);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error al obtener blogs: {ex.Message}" });
+            }
+        }
     }
 }

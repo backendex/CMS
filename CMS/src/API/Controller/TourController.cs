@@ -49,7 +49,7 @@ namespace CMS.src.API.Controller
             }
         }
 
-        [HttpPost("/createTour")]
+        [HttpPost("createTour")]
         public async Task<IActionResult> Create([FromBody] TourDto dto)
         {
             if (!ModelState.IsValid)
