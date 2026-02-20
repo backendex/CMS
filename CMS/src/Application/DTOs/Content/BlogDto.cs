@@ -9,6 +9,8 @@ namespace CMS.src.Application.DTOs.Content
         [MaxLength(200)]
         public string Title { get; set; }
 
+        public string AuthorName { get; set; }
+
         [Required]
         public string Slug { get; set; }
 
@@ -22,6 +24,7 @@ namespace CMS.src.Application.DTOs.Content
         public Guid SiteId { get; set; }
 
         public SeoMetadataDto SeoData { get; set; }
+ 
 
     }
 }

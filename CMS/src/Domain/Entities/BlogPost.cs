@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient.Server;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace CMS.src.Domain.Entities
 {
@@ -11,7 +12,6 @@ namespace CMS.src.Domain.Entities
         [Key]
         [Column("id")]
         public Guid Id { get; set; } = Guid.NewGuid();
-
         [Required]
         [Column("site_id")]
         public Guid SiteId { get; set; }

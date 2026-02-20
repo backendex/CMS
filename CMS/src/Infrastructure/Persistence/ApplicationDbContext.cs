@@ -26,7 +26,6 @@ namespace CMS.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            // Configuración de la relación entre User y AccessRole
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasOne(d => d.AccessRole)
@@ -54,23 +53,15 @@ namespace CMS.Infrastructure.Persistence
 
             modelBuilder.Entity<UserSite>(entity =>
             {
-                // 1. Definir la Llave Primaria Compuesta
                 entity.HasKey(us => new { us.UserId, us.SiteId });
-
-                // 2. Mapeo de columnas EXACTO para Postgres (Esto quita el error 42703)
                 entity.Property(us => us.UserId)
-                      .HasColumnName("user_id"); // O "user_id" según tu DB
-
+                      .HasColumnName("user_id");
                 entity.Property(us => us.SiteId)
-                      .HasColumnName("site_id"); // O "site_id" según tu DB
-
-                // 3. Relación con Usuario
+                      .HasColumnName("site_id");
                 entity.HasOne(us => us.User)
                       .WithMany(u => u.UserSites)
                       .HasForeignKey(us => us.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
-
-                // 4. Relación con Sitio
                 entity.HasOne(us => us.SiteNavigate)
                       .WithMany()
                       .HasForeignKey(us => us.SiteId)

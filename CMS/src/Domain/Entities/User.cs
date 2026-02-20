@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace CMS.src.Domain.Entities
 {
@@ -39,6 +40,8 @@ namespace CMS.src.Domain.Entities
         [Column("isdeleted")]
         public bool IsDeleted { get; internal set; }
         public virtual ICollection<UserSite> UserSites { get; set; }
+        [JsonIgnore] 
+        public virtual ICollection<BlogPost> BlogPosts { get; set; } = new List<BlogPost>();
     }
 
     

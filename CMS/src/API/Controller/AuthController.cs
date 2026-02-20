@@ -27,7 +27,7 @@ namespace CMS.src.API.Controller
         }
 
         [Authorize(Roles = "Administrador")]
-        [HttpPost("admin/create-user")]
+        [HttpPost("create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);

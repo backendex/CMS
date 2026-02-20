@@ -11,9 +11,8 @@ namespace CMS.src.Application.Interfaces
         Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId);
         Task<MediaContent> SaveMediaAsync(MediaContent media);
         Task<Guid> CreatePostAsync(BlogPost blogDto);
+        Task<BlogPost?> GetPostByIdAsync(Guid id, Guid siteId);
         Task<bool> ExistsBySlugAsync(string slug, Guid siteId);
-        Task<List<BlogPost>> GetPostsAsync(string? siteId = null);
-
-
+        Task UpdatePostAsync(BlogPost blogDto);
     }
 }

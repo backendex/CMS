@@ -4,6 +4,7 @@ using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CMS.src.API.Controller
 {
@@ -56,6 +57,7 @@ namespace CMS.src.API.Controller
             var createdMedia = await _contentService.SaveMediaAsync(media);
             return Ok(createdMedia);
         }
+
         [HttpPost("createPost")]
         public async Task<IActionResult> CreatePost([FromBody] BlogPost postDto)
         {
@@ -73,18 +75,45 @@ namespace CMS.src.API.Controller
             }
         }
 
-        [HttpGet("getPosts")]
-        public async Task<ActionResult<List<BlogPost>>> GetPosts([FromQuery] string? siteId)
+        [HttpGet("getPostById")]
+        public async Task<IActionResult> GetPostById(Guid id, Guid siteId)
         {
             try
             {
-                var posts = await _contentService.GetPostsAsync(siteId);
-                return Ok(posts);
+                var post = await _contentService.GetPostByIdAsync(id, siteId);
+                if (post == null || post.SiteId != siteId)
+                {
+                    return NotFound(new { message = "El blog solicitado no existe." });
+                }
+                return Ok(post);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = $"Error al obtener blogs: {ex.Message}" });
+                return StatusCode(500, new { message = "Error al obtener el blog", error = ex.Message });
+            }
+
+        }
+        [HttpPut("updatePost")]
+        public async Task<IActionResult> UpdatePost(Guid id, [FromBody] BlogPost blogDto)
+        {
+            if (id != blogDto.Id)
+            {
+                return BadRequest("El ID de la URL no coincide con el ID del cuerpo de la solicitud.");
+            }
+            try
+            {
+                await _contentService.UpdatePostAsync(blogDto);
+                return Ok(new { message = "Blog actualizado con éxito" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
+       
+
     }
+            
 }
+    
+
