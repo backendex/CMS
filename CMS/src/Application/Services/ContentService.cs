@@ -39,7 +39,7 @@ namespace CMS.src.Application.Services
                 {
                     _context.SiteContents.Add(new SiteContent
                     {
-                        Id = Guid.NewGuid(), 
+                        Id = Guid.NewGuid(),
                         SiteId = contentBulk.SiteId,
                         Key = contentBulk.Key,
                         Value = contentBulk.Value
@@ -116,10 +116,40 @@ namespace CMS.src.Application.Services
                 throw new Exception($"Error al actualizar en la base de datos: {errorDetail}");
             }
         }
+        public async Task<IEnumerable<BlogPost>> GetPostsAsync(Guid siteId)
+        {
+            return await _context.BlogPost
+                .Where(p => p.SiteId == siteId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
         public async Task<BlogPost?> GetPostByIdAsync(Guid id, Guid siteId)
         {
-            return await _context.BlogPost      
+            return await _context.BlogPost
                 .FirstOrDefaultAsync(b => b.Id == id && b.SiteId == siteId);
+        }
+        public async Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId)
+        {
+            return await _context.Categories
+                .Where(c => c.SiteId == siteId)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+        public async Task<Guid> CreateCategoryAsync(CategoryDto categoryDto)
+        {
+            var category = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = categoryDto.Name,
+                Slug = categoryDto.Slug,
+                Description = categoryDto.Description,
+                SiteId = categoryDto.SiteId,
+                ParentCategoryId = categoryDto.ParentCategoryId
+            };
+
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
+            return category.Id;
         }
 
     }

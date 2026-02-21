@@ -30,7 +30,7 @@ namespace CMS.src.API.Controller
         [HttpPost("bulk")]
         public async Task<IActionResult> updateBulk([FromBody] List<ContentUpdateDto> contentRequests)
         {
-            
+
             if (contentRequests == null || !contentRequests.Any())
             {
                 return BadRequest("La lista de cambios está vacía.");
@@ -75,6 +75,20 @@ namespace CMS.src.API.Controller
             }
         }
 
+        [HttpGet("getPosts")]
+        public async Task<IActionResult> GetPosts(Guid siteId)
+        {
+            try
+            {
+                var posts = await _contentService.GetPostsAsync(siteId);
+                return Ok(posts);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la lista de posts", error = ex.Message });
+            }
+        }
+
         [HttpGet("getPostById")]
         public async Task<IActionResult> GetPostById(Guid id, Guid siteId)
         {
@@ -91,8 +105,8 @@ namespace CMS.src.API.Controller
             {
                 return StatusCode(500, new { message = "Error al obtener el blog", error = ex.Message });
             }
-
         }
+
         [HttpPut("updatePost")]
         public async Task<IActionResult> UpdatePost(Guid id, [FromBody] BlogPost blogDto)
         {
@@ -110,7 +124,35 @@ namespace CMS.src.API.Controller
                 return BadRequest(new { message = ex.Message });
             }
         }
-       
+
+        [HttpGet("getCategories")]
+        public async Task<IActionResult> GetCategories([FromQuery] Guid siteId)
+        {
+            try
+            {
+                var categories = await _contentService.GetCategoriesAsync(siteId);
+                return Ok(categories);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener categorías", error = ex.Message });
+            }
+        }
+        [HttpPost("createCategory")]
+        public async Task<IActionResult> CreateCategory([FromBody] CategoryDto categoryDto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
+            {
+                var id = await _contentService.CreateCategoryAsync(categoryDto);
+                return Ok(new { message = "Categoría creada con éxito", id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
     }
             

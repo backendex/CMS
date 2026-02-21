@@ -14,5 +14,8 @@ namespace CMS.src.Application.Interfaces
         Task<BlogPost?> GetPostByIdAsync(Guid id, Guid siteId);
         Task<bool> ExistsBySlugAsync(string slug, Guid siteId);
         Task UpdatePostAsync(BlogPost blogDto);
+        Task<IEnumerable<BlogPost>> GetPostsAsync(Guid siteId);
+        Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId);
+        Task<Guid> CreateCategoryAsync(CategoryDto categoryDto);
     }
 }

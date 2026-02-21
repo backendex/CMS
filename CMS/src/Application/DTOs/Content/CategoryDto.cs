@@ -1,24 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using CMS.src.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
-namespace CMS.src.Domain.Entities
+namespace CMS.src.Application.DTOs.Content
 {
-    [Table("categories")]
-    public class Category
+    public class CategoryDto
     {
-        [Column("id")]
         public Guid Id { get; set; }
-        [Required]
-        [Column("name")]
         public string Name { get; set; }
-        [Column("slug")]
         public string Slug { get; set; }
-        [Column("description")]
         public string? Description { get; set; }
-        [Column("parent_category_id")]
         public Guid? ParentCategoryId { get; set; }
-        [Column("site_id")]
         public Guid SiteId { get; set; }
         public Category? ParentCategory { get; set; }
     }

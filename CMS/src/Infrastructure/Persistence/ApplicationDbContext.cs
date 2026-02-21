@@ -22,6 +22,7 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<RolePermissions> RolePermissions { get; set; }
         public DbSet<MediaContent> Media { get; set; }
         public DbSet<BlogPost> BlogPost { get; set; }
+        public DbSet<Category> Categories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -109,6 +110,23 @@ namespace CMS.Infrastructure.Persistence
                       v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
                       v => System.Text.Json.JsonSerializer.Deserialize<SeoMetadata>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new SeoMetadata()
                   );
+            });
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.ToTable("categories");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name).HasColumnName("name");
+                entity.Property(e => e.Slug).HasColumnName("slug");
+                entity.Property(e => e.Description).HasColumnName("description");
+                entity.Property(e => e.ParentCategoryId).HasColumnName("parent_category_id");
+                entity.Property(e => e.SiteId).HasColumnName("site_id");
+
+                entity.HasOne(d => d.ParentCategory)
+                      .WithMany()
+                      .HasForeignKey(d => d.ParentCategoryId)
+                      .IsRequired(false) 
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

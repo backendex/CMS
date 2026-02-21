@@ -40,11 +40,8 @@ namespace CMS.src.Domain.Entities
         [Column("isdeleted")]
         public bool IsDeleted { get; internal set; }
         public virtual ICollection<UserSite> UserSites { get; set; }
-        [JsonIgnore] 
-        public virtual ICollection<BlogPost> BlogPosts { get; set; } = new List<BlogPost>();
     }
-
+}
     
 
-}
 
