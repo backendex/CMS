@@ -15,14 +15,12 @@ namespace CMS.src.Application.Services
         {
             _context = context;
         }
-
         public async Task<List<SiteContent>> GetContentBySiteIdAsync(Guid siteId)
         {
             return await _context.SiteContents
                 .Where(c => c.SiteId == siteId)
                 .ToListAsync();
         }
-
         public async Task<bool> UpdateBulkContentAsync(List<ContentUpdateDto> contentUpdate)
         {
             foreach (var contentBulk in contentUpdate)
@@ -65,16 +63,11 @@ namespace CMS.src.Application.Services
             await _context.SaveChangesAsync();
             return media;
         }
-        public async Task<Guid> CreatePostAsync(BlogPost blogDto)
+        public async Task<long> CreatePostAsync(BlogPost blogDto)
         {
-            if (await ExistsBySlugAsync(blogDto.Slug, blogDto.SiteId))
+            if (await ExistsBySlugAsync(blogDto.PostName, blogDto.SiteId))
             {
                 throw new Exception("El slug ya existe para este sitio.");
-            }
-
-            if (blogDto.Id == Guid.Empty)
-            {
-                blogDto.Id = Guid.NewGuid();
             }
 
             _context.BlogPost.Add(blogDto);
@@ -82,11 +75,10 @@ namespace CMS.src.Application.Services
 
             return blogDto.Id;
         }
-
         public async Task<bool> ExistsBySlugAsync(string slug, Guid siteId)
         {
             return await _context.BlogPost
-                .AnyAsync(b => b.Slug == slug && b.SiteId == siteId);
+                .AnyAsync(b => b.PostName == slug && b.SiteId == siteId);
         }
         public async Task UpdatePostAsync(BlogPost blogDto)
         {
@@ -98,13 +90,15 @@ namespace CMS.src.Application.Services
                 throw new Exception("El blog post no fue encontrado.");
             }
 
-            existingPost.Title = blogDto.Title;
-            existingPost.Slug = blogDto.Slug;
-            existingPost.Content = blogDto.Content;
-            existingPost.FeaturedImage = blogDto.FeaturedImage;
-            existingPost.IsPublished = blogDto.IsPublished;
-            existingPost.UpdatedAt = DateTime.UtcNow;
-            existingPost.SeoData = blogDto.SeoData;
+            existingPost.PostTitle = blogDto.PostTitle;
+            existingPost.PostName = blogDto.PostName; 
+            existingPost.PostContent = blogDto.PostContent;
+            existingPost.PostStatus = blogDto.PostStatus;
+            string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            existingPost.PostModified = now;
+            existingPost.PostModifiedGmt = now;
+            existingPost.PostModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            existingPost.SeoData = blogDto.SeoData; 
 
             try
             {
@@ -120,10 +114,11 @@ namespace CMS.src.Application.Services
         {
             return await _context.BlogPost
                 .Where(p => p.SiteId == siteId)
-                .OrderByDescending(p => p.CreatedAt)
+                .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
         }
-        public async Task<BlogPost?> GetPostByIdAsync(Guid id, Guid siteId)
+
+        public async Task<BlogPost?> GetPostByIdAsync(long id, Guid siteId)
         {
             return await _context.BlogPost
                 .FirstOrDefaultAsync(b => b.Id == id && b.SiteId == siteId);

@@ -30,7 +30,7 @@ namespace CMS.src.API.Controller
 
         }
 
-        [HttpGet("/getTourById")]
+        [HttpGet("getTourById")]
         public async Task<IActionResult> GetById(Guid id, Guid siteId)
         {
             try

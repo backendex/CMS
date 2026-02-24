@@ -90,7 +90,7 @@ namespace CMS.src.API.Controller
         }
 
         [HttpGet("getPostById")]
-        public async Task<IActionResult> GetPostById(Guid id, Guid siteId)
+        public async Task<IActionResult> GetPostById(long id, Guid siteId)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace CMS.src.API.Controller
         }
 
         [HttpPut("updatePost")]
-        public async Task<IActionResult> UpdatePost(Guid id, [FromBody] BlogPost blogDto)
+        public async Task<IActionResult> UpdatePost(long id, [FromBody] BlogPost blogDto)
         {
             if (id != blogDto.Id)
             {
@@ -124,7 +124,7 @@ namespace CMS.src.API.Controller
                 return BadRequest(new { message = ex.Message });
             }
         }
-
+        
         [HttpGet("getCategories")]
         public async Task<IActionResult> GetCategories([FromQuery] Guid siteId)
         {

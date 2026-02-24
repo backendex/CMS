@@ -10,12 +10,12 @@ namespace CMS.src.Application.Interfaces
         Task<List<SiteContent>> GetContentBySiteIdAsync(Guid siteId);
         Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId);
         Task<MediaContent> SaveMediaAsync(MediaContent media);
-        Task<Guid> CreatePostAsync(BlogPost blogDto);
-        Task<BlogPost?> GetPostByIdAsync(Guid id, Guid siteId);
+        Task<long> CreatePostAsync(BlogPost blogDto);
+        Task<BlogPost?> GetPostByIdAsync(long id, Guid siteId);
         Task<bool> ExistsBySlugAsync(string slug, Guid siteId);
-        Task UpdatePostAsync(BlogPost blogDto);
         Task<IEnumerable<BlogPost>> GetPostsAsync(Guid siteId);
         Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId);
         Task<Guid> CreateCategoryAsync(CategoryDto categoryDto);
+        Task UpdatePostAsync(BlogPost blogDto);
     }
 }

@@ -22,13 +22,11 @@ namespace CMS.src.Application.Services
                 .Where(t => t.SiteId == siteId)
                 .ToListAsync();
         }
-
         public async Task<Tour?> GetTourByIdAsync(Guid id, Guid siteId)
         {
             return await _context.Tours
                 .FirstOrDefaultAsync(t => t.Id == id && t.SiteId == siteId);
         }
-
         public async Task<Tour> CreateTourAsync(TourDto tourDto)
         {
 
@@ -59,7 +57,6 @@ namespace CMS.src.Application.Services
             }
             return tour;
         }
-
         public async Task<bool> UpdateTourAsync(Guid id, TourDto tourDto)
         {
             var tour = await _context.Tours.FindAsync(id);
@@ -76,7 +73,6 @@ namespace CMS.src.Application.Services
 
             return await _context.SaveChangesAsync() > 0;
         }
-
         public async Task<bool> DeleteTourAsync(Guid id)
         {
             var tour = await _context.Tours.FindAsync(id);

@@ -91,25 +91,42 @@ namespace CMS.Infrastructure.Persistence
             });
             modelBuilder.Entity<BlogPost>(entity =>
             {
-                entity.ToTable("blog_post");
+                entity.ToTable("wp_posts");
 
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("id");
-                entity.Property(e => e.Title).HasColumnName("title");
-                entity.Property(e => e.Slug).HasColumnName("slug");
-                entity.Property(e => e.Content).HasColumnName("content");
-                entity.Property(e => e.FeaturedImage).HasColumnName("featured_image");
-                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-                entity.Property(e => e.IsPublished).HasColumnName("is_published");
+
+                entity.Property(e => e.PostAuthor).HasColumnName("post_author");
+                entity.Property(e => e.PostDate).HasColumnName("post_date");
+                entity.Property(e => e.PostDateGmt).HasColumnName("post_date_gmt");
+                entity.Property(e => e.PostContent).HasColumnName("post_content");
+                entity.Property(e => e.PostTitle).HasColumnName("post_title");
+                entity.Property(e => e.PostExcerpt).HasColumnName("post_excerpt");
+                entity.Property(e => e.PostStatus).HasColumnName("post_status").HasMaxLength(20);
+                entity.Property(e => e.CommentStatus).HasColumnName("comment_status").HasMaxLength(20);
+                entity.Property(e => e.PingStatus).HasColumnName("ping_status").HasMaxLength(20);
+                entity.Property(e => e.PostPassword).HasColumnName("post_password").HasMaxLength(255);
+                entity.Property(e => e.PostName).HasColumnName("post_name").HasMaxLength(200);
+                entity.Property(e => e.ToPing).HasColumnName("to_ping");
+                entity.Property(e => e.Pinged).HasColumnName("pinged");
+                entity.Property(e => e.PostModified).HasColumnName("post_modified");
+                entity.Property(e => e.PostModifiedGmt).HasColumnName("post_modified_gmt");
+                entity.Property(e => e.PostContentFiltered).HasColumnName("post_content_filtered");
+                entity.Property(e => e.PostParent).HasColumnName("post_parent");
+                entity.Property(e => e.Guid).HasColumnName("guid").HasMaxLength(255);
+                entity.Property(e => e.MenuOrder).HasColumnName("menu_order");
+                entity.Property(e => e.PostType).HasColumnName("post_type").HasMaxLength(20);
+                entity.Property(e => e.PostMimeType).HasColumnName("post_mime_type").HasMaxLength(100);
+                entity.Property(e => e.CommentCount).HasColumnName("comment_count");
                 entity.Property(e => e.SiteId).HasColumnName("site_id");
+
                 entity.Property(e => e.SeoData)
-                  .HasColumnName("seo_data")
-                  .HasColumnType("jsonb")
-                  .HasConversion(
-                      v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
-                      v => System.Text.Json.JsonSerializer.Deserialize<SeoMetadata>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new SeoMetadata()
-                  );
+                    .HasColumnName("seo_data")
+                    .HasColumnType("jsonb")
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+                        v => System.Text.Json.JsonSerializer.Deserialize<SeoMetadata>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new SeoMetadata()
+                    );
             });
             modelBuilder.Entity<Category>(entity =>
             {

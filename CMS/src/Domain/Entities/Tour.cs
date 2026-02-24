@@ -42,7 +42,6 @@ namespace CMS.src.Domain.Entities
         [Column("slug")]
         public string Slug { get; set; } = string.Empty;
 
-        //column jsonb
         [Column("dynamic_data", TypeName = "jsonb")]
         public JsonDocument DynamicData { get; set; }
     }
