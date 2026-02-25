@@ -23,6 +23,7 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<MediaContent> Media { get; set; }
         public DbSet<BlogPost> BlogPost { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<ContentType> ContentType { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -144,6 +145,18 @@ namespace CMS.Infrastructure.Persistence
                       .HasForeignKey(d => d.ParentCategoryId)
                       .IsRequired(false) 
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<ContentType>(entity =>
+            {
+                entity.ToTable("contentType");
+                entity.HasKey(c => c.Id);
+
+                entity.Property(c => c.Name).HasColumnName("name");
+                entity.Property(c => c.SiteId).HasColumnName("siteid");
+
+                entity.Property(c => c.Schema)
+                      .HasColumnName("schema_definition") 
+                      .HasColumnType("jsonb");
             });
         }
     }

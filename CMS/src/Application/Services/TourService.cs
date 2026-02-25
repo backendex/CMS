@@ -33,6 +33,7 @@ namespace CMS.src.Application.Services
             var tour = new Tour
             {
                 SiteId = tourDto.SiteId,
+                ContentTypeId = tourDto.ContentTypeId,
                 Name = tourDto.Name,
                 Description = tourDto.Description,
                 Price = tourDto.Price,
@@ -43,7 +44,8 @@ namespace CMS.src.Application.Services
                 Slug = tourDto.Slug,               
             };
 
-            tour.DynamicData = JsonDocument.Parse(JsonSerializer.Serialize(tourDto.DynamicData ?? new Dictionary<string, object>()));
+            var jsonString = JsonSerializer.Serialize(tourDto.DynamicData ?? new Dictionary<string, object>());
+            tour.DynamicData = JsonDocument.Parse(jsonString);
 
             _context.Tours.Add(tour);
             try
@@ -71,7 +73,14 @@ namespace CMS.src.Application.Services
             tour.SeoDescription = tourDto.SeoDescription;
             tour.Slug = tourDto.Slug;
 
+            if (tourDto.DynamicData != null)
+            {
+                var jsonString = JsonSerializer.Serialize(tourDto.DynamicData);
+                tour.DynamicData = JsonDocument.Parse(jsonString);
+            }
+
             return await _context.SaveChangesAsync() > 0;
+
         }
         public async Task<bool> DeleteTourAsync(Guid id)
         {
@@ -80,6 +89,18 @@ namespace CMS.src.Application.Services
 
             _context.Tours.Remove(tour);
             return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<IEnumerable<ContentTypeDto>> GetContentTypesBySiteAsync(Guid siteId)
+        {
+            return await _context.ContentType
+                .AsNoTracking()
+                .Where(ct => ct.SiteId == siteId)
+                .Select(ct => new ContentTypeDto
+                {
+                    Id = ct.Id,
+                    Name = ct.Name
+                })
+                .ToListAsync();
         }
     }
 }

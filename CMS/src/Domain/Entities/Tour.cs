@@ -24,6 +24,10 @@ namespace CMS.src.Domain.Entities
         [Column("description")]
         public string Description { get; set; } = string.Empty;
 
+        [Required]
+        [Column("content_type_id")]
+        public Guid ContentTypeId { get; set; } 
+
         [Column("price")]
         public decimal Price { get; set; }
 
@@ -44,5 +48,8 @@ namespace CMS.src.Domain.Entities
 
         [Column("dynamic_data", TypeName = "jsonb")]
         public JsonDocument DynamicData { get; set; }
+
+        [ForeignKey("ContentTypeId")]
+        public virtual ContentType ContentType { get; set; }
     }
 }

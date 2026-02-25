@@ -82,9 +82,17 @@ namespace CMS.src.API.Controller
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] TourDto dto)
         {
-            var success = await _tourService.UpdateTourAsync(id, dto);
-            if (!success) return NotFound();
-            return Ok(new { message = "Tour actualizado correctamente" });
+            try
+            {
+                var success = await _tourService.UpdateTourAsync(id, dto);
+                if (!success) return NotFound(new { message = "Tour no encontrado" });
+
+                return Ok(new { message = "Tour actualizado con éxito" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error al actualizar", error = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
@@ -93,6 +101,19 @@ namespace CMS.src.API.Controller
             var success = await _tourService.DeleteTourAsync(id);
             if (!success) return NotFound();
             return Ok(new { message = "Tour eliminado" });
+        }
+        [HttpGet("content-type")]
+        public async Task<IActionResult> GetContentTypes(Guid siteId)
+        {
+            try
+            {
+                var types = await _tourService.GetContentTypesBySiteAsync(siteId);
+                return Ok(types);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error al obtener tipos de contenido", error = ex.Message });
+            }
         }
     }
 }

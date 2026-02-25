@@ -10,5 +10,6 @@ namespace CMS.src.Application.Interfaces
         Task<Tour> CreateTourAsync(TourDto tourDto);
         Task<bool> UpdateTourAsync(Guid id, TourDto tourDto);
         Task<bool> DeleteTourAsync(Guid id);
+        Task<IEnumerable<ContentTypeDto>> GetContentTypesBySiteAsync(Guid siteId);
     }
 }
