@@ -6,7 +6,6 @@ using System.Text.Json.Serialization;
 
 namespace CMS.src.Domain.Entities
 {
-    [Table("wp_posts")]
     public class BlogPost
     {
         [Key]

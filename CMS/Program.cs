@@ -84,7 +84,6 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-
 #endregion
 
 #region CONTROLLERS & SWAGGER

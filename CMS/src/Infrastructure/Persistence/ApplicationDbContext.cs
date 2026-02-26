@@ -92,7 +92,7 @@ namespace CMS.Infrastructure.Persistence
             });
             modelBuilder.Entity<BlogPost>(entity =>
             {
-                entity.ToTable("wp_posts");
+                entity.ToTable("wp_snorkell");
 
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("id");
