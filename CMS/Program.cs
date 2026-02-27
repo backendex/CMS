@@ -20,11 +20,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
-    provider.GetRequiredService<ApplicationDbContext>());
+    provider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
 // Inyección de tus servicios personalizados
 builder.Services.AddScoped<IAuthService, AuthService>();

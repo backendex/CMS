@@ -20,103 +20,52 @@ namespace CMS.src.API.Controller
             _contentService = contentService;
         }
 
-        [HttpGet("site/{siteId}/text")]
-        public async Task<IActionResult> GetContent(Guid siteId)
-        {
-            var content = await _contentService.GetContentBySiteIdAsync(siteId);
-            return Ok(content);
-        }
+        // --- BLOG POSTS ---
 
-        [HttpPost("bulk")]
-        public async Task<IActionResult> updateBulk([FromBody] List<ContentUpdateDto> contentRequests)
-        {
-
-            if (contentRequests == null || !contentRequests.Any())
-            {
-                return BadRequest("La lista de cambios está vacía.");
-            }
-            var success = await _contentService.UpdateBulkContentAsync(contentRequests);
-
-            if (!success)
-            {
-                return BadRequest("No se realizaron cambios o hubo un error al actualizar.");
-            }
-            return Ok(new { message = "Contenido sincronizado correctamente" });
-        }
-
-        [HttpGet("site/{siteId}/media")]
-        public async Task<IActionResult> GetBySite(Guid siteId)
-        {
-            var results = await _contentService.GetMediaBySiteAsync(siteId);
-            return Ok(results);
-        }
-
-        [HttpPost("createMedia")]
-        public async Task<IActionResult> Create([FromBody] MediaContent media)
-        {
-            var createdMedia = await _contentService.SaveMediaAsync(media);
-            return Ok(createdMedia);
-        }
-
-        [HttpPost("createPost")]
-        public async Task<IActionResult> CreatePost([FromBody] BlogPost postDto)
-        {
-            if (postDto == null) return BadRequest(new { message = "Los datos del post son requeridos." });
-
-            try
-            {
-                var id = await _contentService.CreatePostAsync(postDto);
-                return Ok(new { message = "Post guardado con éxito", id });
-            }
-            catch (Exception ex)
-            {
-                var errorDetail = ex.InnerException?.Message ?? ex.Message;
-                return BadRequest(new { message = errorDetail });
-            }
-        }
-
-        [HttpGet("getPosts")]
-        public async Task<IActionResult> GetPosts(Guid siteId)
+        [HttpGet("posts")]
+        public async Task<IActionResult> GetPosts(string siteName,[FromQuery] Guid siteId)
         {
             try
             {
-                var posts = await _contentService.GetPostsAsync(siteId);
+                var posts = await _contentService.GetPostAsync(siteName,siteId);
                 return Ok(posts);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error al obtener la lista de posts", error = ex.Message });
+                return StatusCode(500, new { message = "Error al obtener posts", error = ex.Message });
             }
         }
 
-        [HttpGet("getPostById")]
-        public async Task<IActionResult> GetPostById(long id, Guid siteId)
+        [HttpGet("{siteName}/posts/{id}")]
+        public async Task<IActionResult> GetPostById(string siteName, long id, Guid siteId)
+        {
+            var post = await _contentService.GetPostByIdAsync(siteName, id, siteId);
+            if (post == null) return NotFound(new { message = "El post no existe." });
+            return Ok(post);
+        }
+
+        [HttpPost("createPost")]
+        public async Task<IActionResult> CreatePost([FromBody] BlogPost postDto, string siteName)
         {
             try
             {
-                var post = await _contentService.GetPostByIdAsync(id, siteId);
-                if (post == null || post.SiteId != siteId)
-                {
-                    return NotFound(new { message = "El blog solicitado no existe." });
-                }
-                return Ok(post);
+                var id = await _contentService.CreatePostAsync(postDto, siteName);
+                return Ok(new { message = "Post guardado con éxito", id });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error al obtener el blog", error = ex.Message });
+                return BadRequest(new { message = ex.Message });
             }
         }
 
-        [HttpPut("updatePost")]
-        public async Task<IActionResult> UpdatePost(long id, [FromBody] BlogPost blogDto)
+        [HttpPut("{siteName}/updatePost/{id}")]
+        public async Task<IActionResult> UpdatePost(string siteName, long id, [FromBody] BlogPost blogDto)
         {
-            if (id != blogDto.Id)
-            {
-                return BadRequest("El ID de la URL no coincide con el ID del cuerpo de la solicitud.");
-            }
+            if (id != blogDto.Id) return BadRequest("ID no coincide.");
+
             try
             {
-                await _contentService.UpdatePostAsync(blogDto);
+                await _contentService.UpdatePostAsync(blogDto, siteName);
                 return Ok(new { message = "Blog actualizado con éxito" });
             }
             catch (Exception ex)
@@ -124,38 +73,40 @@ namespace CMS.src.API.Controller
                 return BadRequest(new { message = ex.Message });
             }
         }
-        
-        [HttpGet("getCategories")]
-        public async Task<IActionResult> GetCategories([FromQuery] Guid siteId)
-        {
-            try
-            {
-                var categories = await _contentService.GetCategoriesAsync(siteId);
-                return Ok(categories);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error al obtener categorías", error = ex.Message });
-            }
-        }
-        [HttpPost("createCategory")]
-        public async Task<IActionResult> CreateCategory([FromBody] CategoryDto categoryDto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            try
-            {
-                var id = await _contentService.CreateCategoryAsync(categoryDto);
-                return Ok(new { message = "Categoría creada con éxito", id });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+        // --- MEDIA ---
+
+        [HttpGet("{siteName}/media")]
+        public async Task<IActionResult> GetMedia(string siteName, [FromQuery] Guid siteId)
+        {
+            var results = await _contentService.GetMediaBySiteAsync(siteId, siteName);
+            return Ok(results);
         }
 
+        [HttpPost("{siteName}/createMedia")]
+        public async Task<IActionResult> CreateMedia(string siteName, [FromBody] MediaContent media)
+        {
+            var createdMedia = await _contentService.SaveMediaAsync(media, siteName);
+            return Ok(createdMedia);
+        }
+
+        // --- CATEGORIES ---
+
+        [HttpGet("{siteName}/categories")]
+        public async Task<IActionResult> GetCategories(string siteName, [FromQuery] Guid siteId)
+        {
+            var categories = await _contentService.GetCategoriesAsync(siteId, siteName);
+            return Ok(categories);
+        }
+
+        [HttpPost("{siteName}/createCategory")]
+        public async Task<IActionResult> CreateCategory(string siteName, [FromBody] CategoryDto categoryDto)
+        {
+            var id = await _contentService.CreateCategoryAsync(categoryDto, siteName);
+            return Ok(new { message = "Categoría creada", id });
+        }
     }
-            
+
 }
     
 

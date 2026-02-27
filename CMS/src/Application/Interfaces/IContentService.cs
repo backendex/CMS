@@ -6,16 +6,13 @@ namespace CMS.src.Application.Interfaces
 {
     public interface  IContentService
     {
-        Task<bool> UpdateBulkContentAsync(List<ContentUpdateDto> contentUpdate);
-        Task<List<SiteContent>> GetContentBySiteIdAsync(Guid siteId);
-        Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId);
-        Task<MediaContent> SaveMediaAsync(MediaContent media);
-        Task<long> CreatePostAsync(BlogPost blogDto);
-        Task<BlogPost?> GetPostByIdAsync(long id, Guid siteId);
-        Task<bool> ExistsBySlugAsync(string slug, Guid siteId);
-        Task<IEnumerable<BlogPost>> GetPostsAsync(Guid siteId);
-        Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId);
-        Task<Guid> CreateCategoryAsync(CategoryDto categoryDto);
-        Task UpdatePostAsync(BlogPost blogDto);
+        Task<IEnumerable<BlogPost>> GetPostAsync(string siteName, Guid siteId);
+        Task<BlogPost?> GetPostByIdAsync(string siteName, long id, Guid siteId);
+        Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId, string siteName);
+        Task UpdatePostAsync(BlogPost blogDto, string siteName);
+        Task<long> CreatePostAsync(BlogPost blogPost, string siteName);
+        Task<Guid> CreateCategoryAsync(CategoryDto categoryDto, string siteName);
+        Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId, string siteName);
+        Task<MediaContent> SaveMediaAsync(MediaContent media, string siteName);
     }
 }
