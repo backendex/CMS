@@ -16,9 +16,12 @@ namespace CMS.src.Infrastructure.Persistence.Interceptors
 
         //se inserta consulta nuevo método
         public override InterceptionResult<DbDataReader> ReaderExecuting(
-            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+           DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
         {
-            ReplaceTableName(command);
+            if (command.CommandText.Contains("\"wp_posts\""))
+            {
+                command.CommandText = command.CommandText.Replace("\"wp_posts\"", $"\"{_tableName}\"");
+            }
             return base.ReaderExecuting(command, eventData, result);
         }
 
@@ -32,9 +35,12 @@ namespace CMS.src.Infrastructure.Persistence.Interceptors
 
         private void ReplaceTableName(DbCommand command)
         {
-            if (command.CommandText.Contains("\"wp_posts\""))
+            //Se reemplaza la versión con comillas como sin comillas
+            if (command.CommandText.Contains("wp_posts"))
             {
-                command.CommandText = command.CommandText.Replace("\"wp_posts\"", $"\"{_tableName}\"");
+                command.CommandText = command.CommandText
+                    .Replace("\"wp_posts\"", $"\"{_tableName}\"")
+                    .Replace("wp_posts", _tableName);
             }
         }
     }

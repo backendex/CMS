@@ -14,15 +14,19 @@ namespace CMS.src.Application.Services
         private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly string _connectionString;
 
-        public ContentService(IDbContextFactory<ApplicationDbContext> contextFactory)
+        public ContentService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration)
         {
             _contextFactory = contextFactory;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")
+                                ?? throw new InvalidOperationException("La cadena de conexión 'DefaultConnection' no fue encontrada.");
         }
         private ApplicationDbContext CreateContextForSite(string siteName)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             optionsBuilder.UseNpgsql(_connectionString)
-                          .AddInterceptors(new DynamicTableInterceptor($"wp_{siteName.ToLower()}"));
+                          .AddInterceptors(new DynamicTableInterceptor($"wp_{siteName.ToLower()}"))
+                          //tests
+                          .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }
@@ -35,15 +39,6 @@ namespace CMS.src.Application.Services
                 .ToListAsync();
 
         }
-        public async Task<List<SiteContent>> GetContentBySiteIdAsync(Guid siteId)
-        {
-            using var context = _contextFactory.CreateDbContext();
-
-            return await context.SiteContents
-                .Where(c => c.SiteId == siteId)
-                .ToListAsync();
-        }
-        //Busqueda de post por id
         public async Task<BlogPost?> GetPostByIdAsync(string siteName,long id, Guid siteId)
         {
             using var context = CreateContextForSite(siteName);
@@ -52,15 +47,12 @@ namespace CMS.src.Application.Services
         }
         public async Task<List<SiteContent>> GetPostBySiteIdAsync(Guid siteId, string siteName)
         {
-            // 1. Crear el contexto usando la factoría y el interceptor
             using var context = CreateContextForSite(siteName);
 
-            // 2. Ahora sí puedes acceder a SiteContents
             return await context.SiteContents
                 .Where(c => c.SiteId == siteId)
                 .ToListAsync();
         }
-        //Busqueda de categorias
         public async Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId, string siteName)
         {
             using var context = CreateContextForSite(siteName);
@@ -69,7 +61,6 @@ namespace CMS.src.Application.Services
                 .OrderBy(c => c.Name)
                 .ToListAsync();
         }
-        //Actualizar
         public async Task UpdatePostAsync(BlogPost blogDto, string siteName)
         {
             using var context = CreateContextForSite(siteName);

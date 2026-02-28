@@ -17,12 +17,14 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var builder = WebApplication.CreateBuilder(args);
 
 #region DATABASE
-
+//se añade nueva configuracion para confing
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// 1. Registro único de la factoría (esto es lo único que debe existir para el contexto)
 builder.Services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// 2. Registro para que AuthService pueda inyectar IApplicationDbContext
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
     provider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 

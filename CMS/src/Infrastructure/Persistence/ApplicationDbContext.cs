@@ -1,8 +1,10 @@
 ﻿using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
+using CMS.src.Infrastructure.Persistence.Interceptors;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Reflection.Emit;
 using System.Security;
 
@@ -10,11 +12,25 @@ namespace CMS.Infrastructure.Persistence
 {
     public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        private readonly string? _dynamicTableName;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, string? tableName = null)
+            : base(options)
+        {
+            _dynamicTableName = tableName;
+        }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+
+            if (!string.IsNullOrEmpty(_dynamicTableName))
+            {
+                optionsBuilder.AddInterceptors(new DynamicTableInterceptor(_dynamicTableName));
+            }
+            base.OnConfiguring(optionsBuilder);
+        }
 
         public DbSet<User> Users => Set<User>();
         public DbSet<AccessRole> AccessRoles => Set<AccessRole>();
-
         public object PostTranslations { get; internal set; }
         public object Sites { get; internal set; }
         public DbSet<SiteContent> SiteContents { get; set; }
@@ -89,7 +105,7 @@ namespace CMS.Infrastructure.Persistence
                 entity.HasMany(p => p.RolePermissions)
                       .WithOne(rp => rp.Permissions)
                       .HasForeignKey(rp => rp.PermissionId);
-            });
+            });           
             modelBuilder.Entity<BlogPost>(entity =>
             {
                 entity.ToTable("wp_snorkell");
