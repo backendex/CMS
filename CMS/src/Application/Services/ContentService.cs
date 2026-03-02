@@ -2,10 +2,8 @@
 using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
-using CMS.src.Infrastructure.Persistence.Interceptors;
-using JWT.Algorithms;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
 
 namespace CMS.src.Application.Services
 {
@@ -13,100 +11,104 @@ namespace CMS.src.Application.Services
     {
         private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly string _connectionString;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IApplicationDbContext _context;
 
-        public ContentService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration)
+        public ContentService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _contextFactory = contextFactory;
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                                 ?? throw new InvalidOperationException("La cadena de conexión 'DefaultConnection' no fue encontrada.");
-        }
-        private ApplicationDbContext CreateContextForSite(string siteName)
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseNpgsql(_connectionString)
-                          .AddInterceptors(new DynamicTableInterceptor($"wp_{siteName.ToLower()}"))
-                          //tests
-                          .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
+            _httpContextAccessor = httpContextAccessor;
 
-            return new ApplicationDbContext(optionsBuilder.Options);
+        }
+        private async Task<ApplicationDbContext> CreateContextForSite(string siteName)
+        {
+            var context = await _contextFactory.CreateDbContextAsync();
+
+            context.CurrentTableName = $"wp_{siteName.ToLower()}";
+
+            return context;
         }
         public async Task<IEnumerable<BlogPost>> GetPostAsync(string siteName, Guid siteId)
         {
-            using var context = CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(siteName);
+
             return await context.BlogPost
                 .Where(p => p.SiteId == siteId)
                 .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
-
         }
-        public async Task<BlogPost?> GetPostByIdAsync(string siteName,long id, Guid siteId)
+        public async Task<List<BlogPost>> GetPostBySiteIdAsync(string siteName, long id,Guid siteId)
         {
-            using var context = CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(siteName);
+
             return await context.BlogPost
-                .FirstOrDefaultAsync(b => b.Id == id && b.SiteId == siteId);
+                .Where(c => c.SiteId == siteId && c.Id == c.Id)
+                .ToListAsync();
         }
-        public async Task<List<SiteContent>> GetPostBySiteIdAsync(Guid siteId, string siteName)
+        public async Task UpdatePostAsync(BlogPost blogPost, string siteName)
         {
-            using var context = CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(siteName);
 
-            return await context.SiteContents
-                .Where(c => c.SiteId == siteId)
-                .ToListAsync();
-        }
-        public async Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId, string siteName)
-        {
-            using var context = CreateContextForSite(siteName);
-            return await context.Categories
-                .Where(c => c.SiteId == siteId)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
-        }
-        public async Task UpdatePostAsync(BlogPost blogDto, string siteName)
-        {
-            using var context = CreateContextForSite(siteName);
             var existingPost = await context.BlogPost
-                .FirstOrDefaultAsync(b => b.Id == blogDto.Id);
+                .FirstOrDefaultAsync(b => b.Id == blogPost.Id);
 
-            if (existingPost == null) throw new Exception("El blogs post no se encontro");
+            if (existingPost == null)
+                throw new Exception("El blog post no se encontró.");
 
-            existingPost.PostTitle = blogDto.PostTitle;
-            existingPost.PostName = blogDto.PostName;
-            existingPost.PostContent = blogDto.PostContent;
-            existingPost.PostStatus = blogDto.PostStatus;
-            string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-            existingPost.PostModified = now;
-            existingPost.PostModifiedGmt = now;
+            existingPost.PostTitle = blogPost.PostTitle;
+            existingPost.PostName = blogPost.PostName;
+            existingPost.PostContent = blogPost.PostContent;
+            existingPost.PostStatus = blogPost.PostStatus;
             existingPost.PostModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-            existingPost.SeoData = blogDto.SeoData;
 
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                var errorDetail = ex.InnerException?.Message ?? ex.Message;
-                throw new Exception($"Error al actualizar en la base de datos: {errorDetail}");
-            }
+            await context.SaveChangesAsync();
         }
         public async Task<long> CreatePostAsync(BlogPost blogPost, string siteName)
         {
-            using var context = CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(siteName);
 
-            // Validar duplicados de slug antes de insertar
-            if (await context.BlogPost.AnyAsync(b => b.PostName == blogPost.PostName && b.SiteId == blogPost.SiteId))
+            if (await context.BlogPost
+                .AnyAsync(b => b.PostName == blogPost.PostName && b.SiteId == blogPost.SiteId))
             {
                 throw new Exception("El slug ya existe para este sitio.");
             }
 
             context.BlogPost.Add(blogPost);
             await context.SaveChangesAsync();
+
             return blogPost.Id;
         }
-        //Crear categoria
+        public async Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId, string siteName)
+        {
+            await using var context = await CreateContextForSite(siteName);
+
+            return await context.Media
+                .Where(m => m.SiteId == siteId)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+        }
+        public async Task<MediaContent> SaveMediaAsync(MediaContent media, string siteName)
+        {
+            await using var context = await CreateContextForSite(siteName);
+            context.Media.Add(media);
+            await context.SaveChangesAsync();
+            return media;
+        }
+        public async Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId, string siteName)
+        {
+            await using var context = await CreateContextForSite(siteName);
+
+            return await context.Categories
+                .Where(c => c.SiteId == siteId)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
         public async Task<Guid> CreateCategoryAsync(CategoryDto categoryDto, string siteName)
         {
-            using var context = CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(siteName);
+
             var category = new Category
             {
                 Id = Guid.NewGuid(),
@@ -119,29 +121,27 @@ namespace CMS.src.Application.Services
 
             context.Categories.Add(category);
             await context.SaveChangesAsync();
+
             return category.Id;
         }
-        //Busqueda para media
-        public async Task<IEnumerable<MediaContent>> GetMediaBySiteAsync(Guid siteId, string siteName)
+        public string TableName
         {
-            using var context = CreateContextForSite(siteName);
-            return await context.Media
-                .Where(m => m.SiteId == siteId)
-                .OrderByDescending(m => m.CreatedAt)
-                .ToListAsync();
-        }
-        //se guarda media
-        public async Task<MediaContent> SaveMediaAsync(MediaContent media, string siteName)
-        {
-            using var context = CreateContextForSite(siteName);
-            media.Id = Guid.NewGuid();
-            media.CreatedAt = DateTime.UtcNow;
-            context.Media.Add(media);
-            await context.SaveChangesAsync();
-            return media;
-        }
+            get
+            {
+                var siteName = _httpContextAccessor
+                    .HttpContext?
+                    .Request
+                    .Query["siteName"]
+                    .ToString();
 
-    }
+                if (string.IsNullOrEmpty(siteName))
+                    return "wp_posts"; 
+
+    
+                return siteName;
+            }
+    }   }
+
 }
 
 

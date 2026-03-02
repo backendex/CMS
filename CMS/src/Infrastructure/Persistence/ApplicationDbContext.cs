@@ -1,5 +1,6 @@
 ﻿using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
+using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
 using CMS.src.Infrastructure.Persistence.Interceptors;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -12,20 +13,19 @@ namespace CMS.Infrastructure.Persistence
 {
     public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
-        private readonly string? _dynamicTableName;
+        public string CurrentTableName { get; set; }
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, string? tableName = null)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
-            _dynamicTableName = tableName;
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-
-            if (!string.IsNullOrEmpty(_dynamicTableName))
+            if(!string.IsNullOrEmpty(CurrentTableName))
             {
-                optionsBuilder.AddInterceptors(new DynamicTableInterceptor(_dynamicTableName));
+                optionsBuilder.AddInterceptors(new DynamicTableInterceptor(CurrentTableName));
             }
+        
             base.OnConfiguring(optionsBuilder);
         }
 
@@ -108,7 +108,7 @@ namespace CMS.Infrastructure.Persistence
             });           
             modelBuilder.Entity<BlogPost>(entity =>
             {
-                entity.ToTable("wp_snorkell");
+                entity.ToTable(CurrentTableName);
 
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("id");

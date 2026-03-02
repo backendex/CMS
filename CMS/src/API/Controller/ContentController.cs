@@ -20,10 +20,8 @@ namespace CMS.src.API.Controller
             _contentService = contentService;
         }
 
-        // --- BLOG POSTS ---
-
-        [HttpGet("posts")]
-        public async Task<IActionResult> GetPosts(string siteName,[FromQuery] Guid siteId)
+        [HttpGet("getPosts")]
+        public async Task<IActionResult> GetPosts(string siteName,Guid siteId)
         {
             try
             {
@@ -36,10 +34,10 @@ namespace CMS.src.API.Controller
             }
         }
 
-        [HttpGet("{siteName}/posts/{id}")]
+        [HttpGet("getByIdPost")]
         public async Task<IActionResult> GetPostById(string siteName, long id, Guid siteId)
         {
-            var post = await _contentService.GetPostByIdAsync(siteName, id, siteId);
+            var post = await _contentService.GetPostBySiteIdAsync(siteName, id, siteId);
             if (post == null) return NotFound(new { message = "El post no existe." });
             return Ok(post);
         }

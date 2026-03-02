@@ -11,6 +11,8 @@ using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using CMS.src.Infrastructure.Persistence;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -20,13 +22,16 @@ var builder = WebApplication.CreateBuilder(args);
 //se añade nueva configuracion para confing
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// 1. Registro único de la factoría (esto es lo único que debe existir para el contexto)
-builder.Services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+builder.Services.AddHttpContextAccessor();
 
-// 2. Registro para que AuthService pueda inyectar IApplicationDbContext
 builder.Services.AddScoped<IApplicationDbContext>(provider =>
-    provider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
+    provider.GetRequiredService<ApplicationDbContext>());
+
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+    options.ReplaceService<IModelCacheKeyFactory, DynamicModelCacheKeyFactory>();
+});
 
 // Inyección de tus servicios personalizados
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -35,6 +40,7 @@ builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ISiteService, SiteService>();
 builder.Services.AddScoped<ITourService, TourService>();
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddHttpContextAccessor();
 #endregion
 
 #region JWT AUTHENTICATION
