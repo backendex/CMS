@@ -21,7 +21,7 @@ namespace CMS.src.Domain.Entities
         public bool IsActive { get; private set; }
         [Column("created_at")]
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-
-
+        [Column("table_name")]
+        public string? TableName { get; internal set; }
     }
 }

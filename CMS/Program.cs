@@ -1,18 +1,14 @@
 ﻿using CMS.Infrastructure.Persistence;
 using CMS.src.Application.Interfaces;
 using CMS.src.Application.Services;
-using CMS.src.Domain.Entities;
-using CMS.src.Infrastructure.Persistence.Repositories;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using CMS.src.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -36,20 +32,19 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 // Inyección de tus servicios personalizados
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
-builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ISiteService, SiteService>();
-builder.Services.AddScoped<ITourService, TourService>();
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<ITourService, TourService>();
 builder.Services.AddHttpContextAccessor();
 #endregion
 
 #region JWT AUTHENTICATION
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
-var jwtKey = jwtSection["Key"]; 
+var jwtKey = jwtSection["Key"];
 var issuer = jwtSection.GetValue<string>("Issuer");
 var audience = jwtSection.GetValue<string>("Audience");
-var secret = builder.Configuration["JwtSettings:Key"]; 
+var secret = builder.Configuration["JwtSettings:Key"];
 var keyBytes = Encoding.UTF8.GetBytes(secret);
 var key = new SymmetricSecurityKey(keyBytes);
 

@@ -25,9 +25,8 @@ namespace CMS.Infrastructure.Persistence
             {
                 optionsBuilder.AddInterceptors(new DynamicTableInterceptor(CurrentTableName));
             }
-        
-            base.OnConfiguring(optionsBuilder);
         }
+
 
         public DbSet<User> Users => Set<User>();
         public DbSet<AccessRole> AccessRoles => Set<AccessRole>();

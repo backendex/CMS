@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace CMS.src.Infrastructure.Persistence.Interceptors
 {
@@ -14,34 +12,27 @@ namespace CMS.src.Infrastructure.Persistence.Interceptors
             _tableName = tableName;
         }
 
-        //se inserta consulta nuevo método
+        // Este se encarga de los SELECT (GetPostAsync)
         public override InterceptionResult<DbDataReader> ReaderExecuting(
-           DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
         {
-            if (command.CommandText.Contains("\"wp_posts\""))
-            {
-                command.CommandText = command.CommandText.Replace("\"wp_posts\"", $"\"{_tableName}\"");
-            }
+            ManipulateCommand(command);
             return base.ReaderExecuting(command, eventData, result);
         }
 
-        // Intercepta comandos de escritura (INSERT, UPDATE, DELETE)
+        // Este se encarga de los INSERT/UPDATE/DELETE (CreatePostAsync, UpdatePostAsync)
         public override InterceptionResult<int> NonQueryExecuting(
             DbCommand command, CommandEventData eventData, InterceptionResult<int> result)
         {
-            ReplaceTableName(command);
+            ManipulateCommand(command);
             return base.NonQueryExecuting(command, eventData, result);
         }
 
-        private void ReplaceTableName(DbCommand command)
+        private void ManipulateCommand(DbCommand command)
         {
-            //Se reemplaza la versión con comillas como sin comillas
-            if (command.CommandText.Contains("wp_posts"))
-            {
-                command.CommandText = command.CommandText
-                    .Replace("\"wp_posts\"", $"\"{_tableName}\"")
-                    .Replace("wp_posts", _tableName);
-            }
+            // IMPORTANTE: EF Core por defecto usará el nombre de la clase "BlogPost" 
+            // o el nombre que definiste en ToTable() en el SQL generado.
+            command.CommandText = command.CommandText.Replace("BlogPost", _tableName);
         }
     }
 }

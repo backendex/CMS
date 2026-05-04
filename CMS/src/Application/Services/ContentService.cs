@@ -22,11 +22,11 @@ namespace CMS.src.Application.Services
             _httpContextAccessor = httpContextAccessor;
 
         }
-        private async Task<ApplicationDbContext> CreateContextForSite(string siteName)
+        private async Task<ApplicationDbContext> CreateContextForSite(string TableName)
         {
             var context = await _contextFactory.CreateDbContextAsync();
 
-            context.CurrentTableName = $"wp_{siteName.ToLower()}";
+            context.CurrentTableName = $"wp_{TableName.ToLower()}";
 
             return context;
         }
@@ -39,7 +39,7 @@ namespace CMS.src.Application.Services
                 .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
         }
-        public async Task<List<BlogPost>> GetPostBySiteIdAsync(string siteName, long id,Guid siteId)
+        public async Task<List<BlogPost>> GetPostBySiteIdAsync(string siteName, long id, Guid siteId)
         {
             await using var context = await CreateContextForSite(siteName);
 
@@ -135,14 +135,14 @@ namespace CMS.src.Application.Services
                     .ToString();
 
                 if (string.IsNullOrEmpty(siteName))
-                    return "wp_posts"; 
+                    return "wp_posts";
 
-    
+
                 return siteName;
             }
-    }   }
+        }
+    }
 
 }
 
 
-    

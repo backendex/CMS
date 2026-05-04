@@ -20,17 +20,23 @@ namespace CMS.src.API.Controller
             _contentService = contentService;
         }
 
+        [AllowAnonymous]
         [HttpGet("getPosts")]
-        public async Task<IActionResult> GetPosts(string siteName,Guid siteId)
+        public async Task<IActionResult> GetPosts(string TableName,Guid siteId)
         {
             try
             {
-                var posts = await _contentService.GetPostAsync(siteName,siteId);
+                var posts = await _contentService.GetPostAsync(TableName,siteId);
                 return Ok(posts);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error al obtener posts", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    message = "Error al obtener posts",
+                    error = ex.Message,
+                    details = ex.InnerException?.Message
+                });
             }
         }
 
@@ -43,11 +49,11 @@ namespace CMS.src.API.Controller
         }
 
         [HttpPost("createPost")]
-        public async Task<IActionResult> CreatePost([FromBody] BlogPost postDto, string siteName)
+        public async Task<IActionResult> CreatePost([FromBody] BlogPost postDto, string TableName)
         {
             try
             {
-                var id = await _contentService.CreatePostAsync(postDto, siteName);
+                var id = await _contentService.CreatePostAsync(postDto, TableName);
                 return Ok(new { message = "Post guardado con éxito", id });
             }
             catch (Exception ex)
