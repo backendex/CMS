@@ -7,7 +7,7 @@ namespace CMS.src.Application.Interfaces
     public interface IContentService
     {
         Task<IEnumerable<BlogPost>> GetPostAsync(string TableName,Guid siteId);
-        Task<List<BlogPost>> GetPostBySiteIdAsync(string siteName, long id, Guid siteId);
+        Task<List<BlogPost>> GetPostBySiteIdAsync(string TableName, long id, Guid siteId);
         Task<IEnumerable<Category>> GetCategoriesAsync(Guid siteId, string siteName);
         Task UpdatePostAsync(BlogPost blogDto, string siteName);
         Task<long> CreatePostAsync(BlogPost blogPost, string TableName);

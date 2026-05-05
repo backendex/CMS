@@ -39,9 +39,9 @@ namespace CMS.src.Application.Services
                 .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
         }
-        public async Task<List<BlogPost>> GetPostBySiteIdAsync(string siteName, long id, Guid siteId)
+        public async Task<List<BlogPost>> GetPostBySiteIdAsync(string TableName, long id, Guid siteId)
         {
-            await using var context = await CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(TableName);
 
             return await context.BlogPost
                 .Where(c => c.SiteId == siteId && c.Id == c.Id)

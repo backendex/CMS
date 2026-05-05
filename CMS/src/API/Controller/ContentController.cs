@@ -41,9 +41,9 @@ namespace CMS.src.API.Controller
         }
 
         [HttpGet("getByIdPost")]
-        public async Task<IActionResult> GetPostById(string siteName, long id, Guid siteId)
+        public async Task<IActionResult> GetPostById(string TableName, long id, Guid siteId)
         {
-            var post = await _contentService.GetPostBySiteIdAsync(siteName, id, siteId);
+            var post = await _contentService.GetPostBySiteIdAsync(TableName, id, siteId);
             if (post == null) return NotFound(new { message = "El post no existe." });
             return Ok(post);
         }
