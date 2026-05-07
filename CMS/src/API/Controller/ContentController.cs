@@ -40,12 +40,23 @@ namespace CMS.src.API.Controller
             }
         }
 
+        [AllowAnonymous] 
         [HttpGet("getByIdPost")]
         public async Task<IActionResult> GetPostById(string TableName, long id, Guid siteId)
         {
-            var post = await _contentService.GetPostBySiteIdAsync(TableName, id, siteId);
-            if (post == null) return NotFound(new { message = "El post no existe." });
-            return Ok(post);
+            try
+            {
+                var post = await _contentService.GetPostBySiteIdAsync(TableName, id, siteId);
+
+                if (post == null)
+                    return NotFound(new { message = "El post no existe." });
+
+                return Ok(post);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener el post", error = ex.Message });
+            }
         }
 
         [HttpPost("createPost")]
@@ -61,23 +72,39 @@ namespace CMS.src.API.Controller
                 return BadRequest(new { message = ex.Message });
             }
         }
-
-        [HttpPut("{siteName}/updatePost/{id}")]
-        public async Task<IActionResult> UpdatePost(string siteName, long id, [FromBody] BlogPost blogDto)
+        [HttpPut("updatePost")]
+        public async Task<IActionResult> UpdatePost([FromQuery] string TableName, [FromQuery] long id, [FromBody] BlogPost blogDto)
         {
-            if (id != blogDto.Id) return BadRequest("ID no coincide.");
+            // En lugar de rechazarlo, forzamos que el objeto tenga el ID correcto
+            blogDto.Id = id;
 
             try
             {
-                await _contentService.UpdatePostAsync(blogDto, siteName);
+                await _contentService.UpdatePostAsync(blogDto, TableName);
                 return Ok(new { message = "Blog actualizado con éxito" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return StatusCode(500, new { message = ex.Message });
             }
         }
+        [HttpDelete("deletePost")]
+        public async Task<IActionResult> DeletePost([FromQuery] string TableName, [FromQuery] long id)
+        {
+            if (string.IsNullOrEmpty(TableName))
+                return BadRequest(new { message = "El nombre de la tabla es requerido." });
 
+            try
+            {
+                await _contentService.DeletePostAsync(id, TableName);
+                return Ok(new { message = "Post eliminado con éxito" });
+            }
+            catch (Exception ex)
+            {
+                // Si el post no existe, el service lanzará una excepción que atrapamos aquí
+                return StatusCode(500, new { message = "Error al eliminar el post", error = ex.Message });
+            }
+        }
         // --- MEDIA ---
 
         [HttpGet("{siteName}/media")]
