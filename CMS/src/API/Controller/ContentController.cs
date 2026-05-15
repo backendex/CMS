@@ -1,10 +1,8 @@
 ﻿using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
-using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CMS.src.API.Controller
 {
@@ -22,11 +20,11 @@ namespace CMS.src.API.Controller
 
         [AllowAnonymous]
         [HttpGet("getPosts")]
-        public async Task<IActionResult> GetPosts(string TableName,Guid siteId)
+        public async Task<IActionResult> GetPosts(string TableName, Guid siteId)
         {
             try
             {
-                var posts = await _contentService.GetPostAsync(TableName,siteId);
+                var posts = await _contentService.GetPostAsync(TableName, siteId);
                 return Ok(posts);
             }
             catch (Exception ex)
@@ -42,11 +40,11 @@ namespace CMS.src.API.Controller
 
         [AllowAnonymous] 
         [HttpGet("getByIdPost")]
-        public async Task<IActionResult> GetPostById(string TableName, long id, Guid siteId)
+        public async Task<IActionResult> GetPostById(string TableName, long id)
         {
             try
             {
-                var post = await _contentService.GetPostBySiteIdAsync(TableName, id, siteId);
+                var post = await _contentService.GetPostBySiteIdAsync(TableName, id);
 
                 if (post == null)
                     return NotFound(new { message = "El post no existe." });
@@ -75,7 +73,7 @@ namespace CMS.src.API.Controller
         [HttpPut("updatePost")]
         public async Task<IActionResult> UpdatePost([FromQuery] string TableName, [FromQuery] long id, [FromBody] BlogPost blogDto)
         {
-            // En lugar de rechazarlo, forzamos que el objeto tenga el ID correcto
+
             blogDto.Id = id;
 
             try
@@ -101,11 +99,9 @@ namespace CMS.src.API.Controller
             }
             catch (Exception ex)
             {
-                // Si el post no existe, el service lanzará una excepción que atrapamos aquí
                 return StatusCode(500, new { message = "Error al eliminar el post", error = ex.Message });
             }
         }
-        // --- MEDIA ---
 
         [HttpGet("{siteName}/media")]
         public async Task<IActionResult> GetMedia(string siteName, [FromQuery] Guid siteId)
@@ -120,8 +116,6 @@ namespace CMS.src.API.Controller
             var createdMedia = await _contentService.SaveMediaAsync(media, siteName);
             return Ok(createdMedia);
         }
-
-        // --- CATEGORIES ---
 
         [HttpGet("{siteName}/categories")]
         public async Task<IActionResult> GetCategories(string siteName, [FromQuery] Guid siteId)

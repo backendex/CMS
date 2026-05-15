@@ -25,25 +25,32 @@ namespace CMS.src.Application.Services
         {
             var context = await _contextFactory.CreateDbContextAsync();
 
-            context.CurrentTableName = $"wp_{TableName.ToLower()}";
+            string cleanName = TableName.Trim().ToLower();
+
+            if (!cleanName.StartsWith("wp_"))
+            {
+                cleanName = $"wp_{cleanName}";
+            }
+
+            context.CurrentTableName = cleanName;
 
             return context;
         }
-        public async Task<IEnumerable<BlogPost>> GetPostAsync(string siteName, Guid siteId)
+        public async Task<IEnumerable<BlogPost>> GetPostAsync(string TableName,Guid siteId)
         {
-            await using var context = await CreateContextForSite(siteName);
+            await using var context = await CreateContextForSite(TableName);
 
             return await context.BlogPost
                 .Where(p => p.SiteId == siteId)
                 .OrderByDescending(p => p.PostDate)
                 .ToListAsync();
         }
-        public async Task<BlogPost?> GetPostBySiteIdAsync(string TableName, long id, Guid siteId)
+        public async Task<BlogPost?> GetPostBySiteIdAsync(string TableName, long id)
         {
             await using var context = await CreateContextForSite(TableName);
 
             return await context.BlogPost
-                .FirstOrDefaultAsync(c => c.SiteId == siteId && c.Id == id);
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
         
         public async Task<long> CreatePostAsync(BlogPost blogPost, string siteName)
@@ -63,11 +70,9 @@ namespace CMS.src.Application.Services
         }
         public async Task UpdatePostAsync(BlogPost blogPost, string siteName)
         {
-            // 1. Validación preventiva (Si siteName llega nulo desde la URL, esto evita el 500)
+
             if (string.IsNullOrEmpty(siteName)) throw new ArgumentException("El nombre del sitio es requerido.");
 
-            // 2. Creación del contexto
-            // Asegúrate de que CreateContextForSite no lance excepciones no controladas
             await using var context = await CreateContextForSite(siteName);
 
             var existingPost = await context.BlogPost
@@ -76,17 +81,12 @@ namespace CMS.src.Application.Services
             if (existingPost == null)
                 throw new Exception($"El blog post con ID {blogPost.Id} no se encontró en {siteName}.");
 
-            // 3. Mapeo
             existingPost.PostTitle = blogPost.PostTitle;
             existingPost.PostName = blogPost.PostName;
             existingPost.PostContent = blogPost.PostContent;
             existingPost.PostStatus = blogPost.PostStatus;
 
-            // 4. Manejo de Fecha
-            // RECOMENDACIÓN: Si tu base de datos es Postgres, usa DateTime directamente.
-            // Si tu modelo BlogPost tiene PostModified como string, cámbialo a DateTime.
-            // Si TIENE que ser string, asegúrate de que la DB sea tipo VARCHAR/TEXT.
-            existingPost.PostModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"); // Cambia el tipo en la clase si es necesario
+            existingPost.PostModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"); 
 
             try
             {
@@ -94,23 +94,19 @@ namespace CMS.src.Application.Services
             }
             catch (Exception ex)
             {
-                // Loguea el error aquí para poder verlo en el Visor de Eventos de Windows
                 throw new Exception($"Fallo en SaveChanges para {siteName}: {ex.Message}", ex);
             }
         }
         public async Task DeletePostAsync(long id, string TableName)
         {
-            // 1. Obtenemos el contexto dinámico
             await using var context = await CreateContextForSite(TableName);
 
-            // 2. Buscamos el post
             var post = await context.BlogPost
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (post == null)
                 throw new Exception($"No se encontró el post con ID {id} en la tabla {TableName}");
 
-            // 3. Eliminamos y guardamos
             context.BlogPost.Remove(post);
             await context.SaveChangesAsync();
         }

@@ -1,12 +1,7 @@
 ﻿using CMS.src.Application.DTOs.Auth;
-using CMS.src.Application.DTOs.Post;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
-using CMS.src.Infrastructure.Persistence.Repositories;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
