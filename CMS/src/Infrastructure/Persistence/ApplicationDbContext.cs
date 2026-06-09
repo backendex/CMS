@@ -1,4 +1,4 @@
-﻿using CMS.src.Application.DTOs.Content;
+using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
 using CMS.src.Application.Services;
 using CMS.src.Domain.Entities;
@@ -31,7 +31,9 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<User> Users => Set<User>();
         public DbSet<AccessRole> AccessRoles => Set<AccessRole>();
         public object PostTranslations { get; internal set; }
-        public object Sites { get; internal set; }
+        public DbSet<Site> Sites => Set<Site>();
+        public DbSet<Page> Pages => Set<Page>();
+        public DbSet<PageTranslation> PageTranslations => Set<PageTranslation>();
         public DbSet<SiteContent> SiteContents { get; set; }
         public DbSet<Tour> Tours { get; set; }
         public DbSet<RolePermissions> RolePermissions { get; set; }
@@ -39,6 +41,7 @@ namespace CMS.Infrastructure.Persistence
         public DbSet<BlogPost> BlogPost { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<ContentType> ContentType { get; set; }
+        public DbSet<MediaItem> MediaItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -172,6 +175,46 @@ namespace CMS.Infrastructure.Persistence
                 entity.Property(c => c.Schema)
                       .HasColumnName("schema_definition") 
                       .HasColumnType("jsonb");
+            });
+
+            modelBuilder.Entity<Site>(entity =>
+            {
+                entity.ToTable("sites");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Name).HasColumnName("name");
+                entity.Property(e => e.Domain).HasColumnName("domain");
+                entity.Property(e => e.Url).HasColumnName("url");
+                entity.Property(e => e.Color).HasColumnName("color");
+                entity.Property(e => e.IsMaintenance).HasColumnName("is_maintenance");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Property(e => e.TableName).HasColumnName("table_name");
+            });
+
+            modelBuilder.Entity<Page>(entity =>
+            {
+                entity.ToTable("pages");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.SiteId).HasColumnName("site_id");
+                entity.Property(e => e.Slug).HasColumnName("slug").HasMaxLength(255);
+                entity.Property(e => e.IsPublished).HasColumnName("is_published");
+                entity.HasMany(e => e.Translations)
+                      .WithOne()
+                      .HasForeignKey(t => t.PageId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PageTranslation>(entity =>
+            {
+                entity.ToTable("page_translations");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.PageId).HasColumnName("page_id");
+                entity.Property(e => e.Language).HasColumnName("language").HasMaxLength(10);
+                entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255);
+                entity.Property(e => e.BlocksJson).HasColumnName("blocks_json").HasColumnType("jsonb");
             });
         }
     }

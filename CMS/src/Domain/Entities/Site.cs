@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CMS.src.Domain.Entities
 {
@@ -6,22 +6,22 @@ namespace CMS.src.Domain.Entities
     public class Site
     {
         [Column("id")]
-        public Guid Id { get; private set; }
+        public Guid Id { get; set; }
         [Column("name")]
-        public string Name { get; private set; } = null!;
+        public string Name { get; set; } = null!;
         [Column("domain")]
-        public string Domain { get; private set; } = null!;
+        public string Domain { get; set; } = null!;
         [Column("url")]
-        public string Url { get; set; }
+        public string? Url { get; set; }
         [Column("color")]
-        public string Color { get; set; }
+        public string? Color { get; set; }
         [Column("is_maintenance")]
         public bool IsMaintenance { get; set; }
         [Column("is_active")]
-        public bool IsActive { get; private set; }
+        public bool IsActive { get; set; }
         [Column("created_at")]
-        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [Column("table_name")]
-        public string? TableName { get; internal set; }
+        public string? TableName { get; set; }
     }
 }

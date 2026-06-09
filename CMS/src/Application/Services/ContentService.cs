@@ -1,4 +1,4 @@
-﻿using CMS.Infrastructure.Persistence;
+using CMS.Infrastructure.Persistence;
 using CMS.src.Application.DTOs.Content;
 using CMS.src.Application.Interfaces;
 using CMS.src.Domain.Entities;
@@ -85,6 +85,9 @@ namespace CMS.src.Application.Services
             existingPost.PostName = blogPost.PostName;
             existingPost.PostContent = blogPost.PostContent;
             existingPost.PostStatus = blogPost.PostStatus;
+            existingPost.PostExcerpt = blogPost.PostExcerpt;
+            existingPost.PostMimeType = blogPost.PostMimeType;
+            existingPost.SeoData = blogPost.SeoData;
 
             existingPost.PostModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"); 
 

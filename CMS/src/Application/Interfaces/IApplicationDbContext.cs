@@ -1,4 +1,4 @@
-﻿using CMS.src.Domain.Entities;
+using CMS.src.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CMS.src.Application.Interfaces
@@ -7,6 +7,10 @@ namespace CMS.src.Application.Interfaces
     {
         DbSet<User> Users { get; }
         DbSet<AccessRole> AccessRoles { get; }
+        DbSet<Site> Sites { get; }
+        DbSet<Page> Pages { get; }
+        DbSet<PageTranslation> PageTranslations { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+        DbSet<MediaItem> MediaItems { get; }
     }
 }

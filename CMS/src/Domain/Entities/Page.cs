@@ -1,18 +1,15 @@
-﻿namespace CMS.src.Domain.Entities
+namespace CMS.src.Domain.Entities
 {
     public class Page
     {
-        public Guid Id { get; private set; }
-        public Guid SiteId { get; private set; }
-        public string Slug { get; private set; } = null!;
-        public bool IsPublished { get; private set; }
+        public Guid Id { get; set; }
+        public Guid SiteId { get; set; }
+        public string Slug { get; set; } = null!;
+        public bool IsPublished { get; set; }
 
+        public ICollection<PageTranslation> Translations { get; set; } = new List<PageTranslation>();
 
-        public ICollection<PageTranslation> Translations { get; private set; } = new List<PageTranslation>();
-
-
-        protected Page() { }
-
+        public Page() { }
 
         public Page(Guid siteId, string slug)
         {
@@ -20,7 +17,6 @@
             SiteId = siteId;
             Slug = slug;
         }
-
 
         public void Publish() => IsPublished = true;
     }
