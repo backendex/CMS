@@ -142,14 +142,26 @@ public static class Program
         var app = builder.Build();
 
         #region MIDDLEWARE PIPELINE
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                               Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+        });
+
         app.UseCors("AllowFrontend");
+
         app.UseSwagger();
         app.UseSwaggerUI();
-
-        app.UseHttpsRedirection();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.MapGet("/", () => Results.Ok(new { status = "Healthy", message = "CMS Backend Root está vivo." }));
+        app.MapGet("/api", () => Results.Ok(new { status = "Healthy", message = "API de .NET Core escuchando correctamente." }));
 
         app.MapControllers();
 
