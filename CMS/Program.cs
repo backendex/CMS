@@ -100,11 +100,12 @@ public static class Program
                     .WithOrigins(
                         "http://localhost:5173",
                         "http://localhost:4321",
-                        "https://romantic-spence.74-208-70-235.plesk.page", 
-                        "https://reverent-knuth.74-208-70-235.plesk.page"   
+                        "https://romantic-spence.74-208-70-235.plesk.page",
+                        "https://reverent-knuth.74-208-70-235.plesk.page"
                     )
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
+                    .WithHeaders("Content-Type", "Authorization", "Accept") 
+                    .AllowCredentials(); 
             });
         });
         #endregion
