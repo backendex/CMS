@@ -103,9 +103,8 @@ public static class Program
                         "https://romantic-spence.74-208-70-235.plesk.page",
                         "https://reverent-knuth.74-208-70-235.plesk.page"
                     )
-                    .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") 
-                    .WithHeaders("Content-Type", "Authorization", "Accept") 
-                    .AllowCredentials(); 
+                    .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .WithHeaders("Content-Type", "Authorization", "Accept");
             });
         });
         #endregion
