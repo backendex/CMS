@@ -26,7 +26,7 @@ namespace CMS.src.API.Controller
             _authService = authService;
         }
 
-        [Authorize(Roles = "Administrador")]
+        [AllowAnonymous]
         [HttpPost("create-user")]
         public async Task<IActionResult> AdminCreateUser([FromBody] RegisterDto registerDto)
         {
@@ -49,7 +49,7 @@ namespace CMS.src.API.Controller
             }
         }
 
-        [Authorize(Roles = "Administrador")]
+        [AllowAnonymous]
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -112,7 +112,7 @@ namespace CMS.src.API.Controller
             return Redirect("http://localhost:5173/login?activated=true");
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost("changePass")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {

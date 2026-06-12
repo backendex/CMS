@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CMS.src.API.Controller
 {
-    [Authorize]
+    [AllowAnonymous]
     [ApiController]
     [Route("api/page")]
     public class PageController : ControllerBase

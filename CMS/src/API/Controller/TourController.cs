@@ -35,7 +35,7 @@ namespace CMS.src.API.Controller
         {
             try
             {
-                var tour = await _tourService.GetTourByIdAsync(id, siteId);
+                var tour = await _tourService.GetTouryIdAsync(id, siteId);
                 if (tour == null || tour.SiteId != siteId)
                 {
                     return NotFound(new { message = "Tour no encontrado para el SiteId proporcionado" });

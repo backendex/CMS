@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CMS.src.API.Controller
 {
-    [Authorize]
+    [AllowAnonymous]
     [ApiController]
     [Route("api/[controller]")]
     public class ContentController : ControllerBase
